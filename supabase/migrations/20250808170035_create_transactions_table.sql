@@ -11,6 +11,7 @@ END$$;
 
 CREATE TABLE transactions (
     id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id uuid REFERENCES auth.users(id),
     date date NOT NULL,
     type transaction_type NOT NULL,
     category text,
