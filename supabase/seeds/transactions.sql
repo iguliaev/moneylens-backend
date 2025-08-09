@@ -2,7 +2,7 @@ INSERT INTO transactions (id, date, type, category, amount, tags, notes, bank_ac
 SELECT
   uuid_generate_v4(),
   CURRENT_DATE - (random() * 365)::int,
-  (ARRAY['earn', 'spend', 'save'])[floor(random() * 3 + 1)],
+  (ARRAY['earn'::transaction_type, 'spend'::transaction_type, 'save'::transaction_type])[floor(random() * 3 + 1)],
   (ARRAY['food', 'salary', 'entertainment', 'transport', 'health', 'investment', 'gift', 'shopping'])[floor(random() * 8 + 1)],
   round((random() * 1000 + 10)::numeric, 2),
   ARRAY[
