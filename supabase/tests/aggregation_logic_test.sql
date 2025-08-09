@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(6);
+select plan(7);
 
 -- Create test supabase users
 select tests.create_supabase_user('user1@test.com');
@@ -79,6 +79,25 @@ select results_eq(
     $$ select total from view_yearly_totals where year = '2025-01-01' and type = 'save' $$,
     array[300.00::numeric],
     'view_yearly_totals returns correct sum for 2025, save'
+);
+
+-- Test 7: view_current_month_category_totals for August 2025, user1
+select results_eq(
+    $$
+    select category, type::text as type, total
+    from view_current_month_category_totals
+    where month = '2025-08-01'
+    order by category, type
+    $$,
+    $$
+    select * from (values
+      ('food'::text, 'spend'::text, 150.00::numeric),
+      ('salary'::text, 'earn'::text, 1000.00::numeric),
+      ('vacation'::text, 'save'::text, 150.00::numeric)
+    ) as t(category, type, total)
+    order by category, type
+    $$,
+    'view_current_month_category_totals returns correct per-category sums for August 2025, user1'
 );
 
 select * from finish();
