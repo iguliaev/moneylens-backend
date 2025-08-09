@@ -54,7 +54,7 @@ ORDER BY year DESC, type;
 
 
 -- ============================================================================
--- View: view_current_month_category_totals
+-- View: view_monthly_category_totals
 -- Description:
 --   Aggregates transaction amounts by category and type per month.
 --   Includes a "month" column so callers can filter for a specified month
@@ -68,11 +68,11 @@ ORDER BY year DESC, type;
 --
 -- Example Query:
 --   SELECT category, type, total
---   FROM view_current_month_category_totals
+--   FROM view_monthly_category_totals
 --   WHERE month = '2025-08-01'
 --   ORDER BY category;
 -- ============================================================================
-CREATE OR REPLACE VIEW view_current_month_category_totals
+CREATE OR REPLACE VIEW view_monthly_category_totals
 WITH(security_invoker = true)
 AS SELECT
   date_trunc('month', date) AS month,
@@ -84,33 +84,34 @@ GROUP BY month, category, type
 ORDER BY month DESC, category, type;
 
 -- ============================================================================
--- View: view_current_year_category_totals
+-- View: view_yearly_category_totals
 -- Description:
---   Aggregates transaction amounts by category and type for the current year.
---   For each category and transaction type, calculates the total sum of amounts
---   for transactions occurring in the current year.
+--   Aggregates transaction amounts by category and type per year.
+--   Includes a "year" column so callers can filter for a specified year
+--   (e.g., WHERE year = '2025-01-01').
 --
 -- Columns:
+--   year     - The first day of the year (timestamp) representing the aggregation period.
 --   category - The category of the transaction.
 --   type     - The type/category of the transaction (e.g., 'income', 'expense').
---   total    - The total sum of transaction amounts for the given category and type in the current year.
+--   total    - The total sum of transaction amounts for the given year, category and type.
 --
 -- Example Query:
 --   SELECT category, type, total
---   FROM view_current_year_category_totals
---   WHERE type = 'expense'
---   ORDER BY total DESC;
+--   FROM view_yearly_category_totals
+--   WHERE year = '2025-01-01'
+--   ORDER BY category;
 -- ============================================================================
-CREATE OR REPLACE VIEW view_current_year_category_totals
+CREATE OR REPLACE VIEW view_yearly_category_totals
 WITH(security_invoker = true)
 AS SELECT
+  date_trunc('year', date) AS year,
   category,
   type,
   SUM(amount) AS total
 FROM transactions
-WHERE date_trunc('year', date) = date_trunc('year', CURRENT_DATE)
-GROUP BY category, type
-ORDER BY total DESC;
+GROUP BY year, category, type
+ORDER BY year DESC, category, type;
 
 -- ============================================================================
 -- View: view_monthly_tagged_type_totals
