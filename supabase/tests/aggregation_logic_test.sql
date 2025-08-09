@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(8);
+select plan(11);
 
 -- Create test supabase users
 select tests.create_supabase_user('user1@test.com');
@@ -117,6 +117,60 @@ select results_eq(
     order by category, type
     $$,
     'view_yearly_category_totals returns correct per-category sums for 2025, user1'
+);
+
+-- Test 9: view_monthly_tagged_type_totals for August 2025, user1, tag groceries
+select results_eq(
+    $$
+    select type::text as type, tags, total
+    from view_monthly_tagged_type_totals
+    where month = '2025-08-01' and 'groceries' = any(tags)
+    order by type, tags::text
+    $$,
+    $$
+    select * from (values
+      ('save'::text, array['groceries']::text[], 150.00::numeric),
+      ('spend'::text, array['groceries']::text[], 150.00::numeric)
+    ) as t(type, tags, total)
+    order by type, tags::text
+    $$,
+    'view_monthly_tagged_type_totals returns correct totals for groceries tag in August 2025, user1'
+);
+
+-- Test 10: view_yearly_tagged_type_totals for 2025, user1, tag groceries
+select results_eq(
+    $$
+    select type::text as type, tags, total
+    from view_yearly_tagged_type_totals
+    where year = '2025-01-01' and 'groceries' = any(tags)
+    order by type, tags::text
+    $$,
+    $$
+    select * from (values
+      ('save'::text, array['groceries']::text[], 300.00::numeric),
+      ('spend'::text, array['groceries']::text[], 300.00::numeric)
+    ) as t(type, tags, total)
+    order by type, tags::text
+    $$,
+    'view_yearly_tagged_type_totals returns correct totals for groceries tag in 2025, user1'
+);
+
+-- Test 11: view_tagged_type_totals across all time, user1
+select results_eq(
+    $$
+    select type::text as type, tags, total
+    from view_tagged_type_totals
+    order by type, tags::text
+    $$,
+    $$
+    select * from (values
+      ('earn'::text, array['salary']::text[], 3000.00::numeric),
+      ('save'::text, array['groceries']::text[], 450.00::numeric),
+      ('spend'::text, array['groceries']::text[], 450.00::numeric)
+    ) as t(type, tags, total)
+    order by type, tags::text
+    $$,
+    'view_tagged_type_totals returns correct totals per type and tag array across all time, user1'
 );
 
 
