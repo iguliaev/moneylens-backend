@@ -14,8 +14,9 @@
 --   WHERE month >= date_trunc('month', CURRENT_DATE) - INTERVAL '6 months'
 --   ORDER BY month DESC, type;
 -- ============================================================================
-CREATE OR REPLACE VIEW view_monthly_totals AS
-SELECT
+CREATE OR REPLACE VIEW view_monthly_totals
+WITH(security_invoker = true)
+AS SELECT
   date_trunc('month', date) AS month,
   type,
   SUM(amount) AS total
@@ -41,8 +42,9 @@ ORDER BY month DESC, type;
 --   WHERE year = date_trunc('year', CURRENT_DATE)
 --   ORDER BY type;
 -- ============================================
-CREATE OR REPLACE VIEW view_yearly_totals AS
-SELECT
+CREATE OR REPLACE VIEW view_yearly_totals
+WITH(security_invoker = true)
+AS SELECT
   date_trunc('year', date) AS year,
   type,
   SUM(amount) AS total
@@ -69,8 +71,9 @@ ORDER BY year DESC, type;
 --   WHERE type = 'expense'
 --   ORDER BY total DESC;
 -- ============================================================================
-CREATE OR REPLACE VIEW view_current_month_category_totals AS
-SELECT
+CREATE OR REPLACE VIEW view_current_month_category_totals
+WITH(security_invoker = true)
+AS SELECT
   category,
   type,
   SUM(amount) AS total
@@ -97,8 +100,9 @@ ORDER BY total DESC;
 --   WHERE type = 'expense'
 --   ORDER BY total DESC;
 -- ============================================================================
-CREATE OR REPLACE VIEW view_current_year_category_totals AS
-SELECT
+CREATE OR REPLACE VIEW view_current_year_category_totals
+WITH(security_invoker = true)
+AS SELECT
   category,
   type,
   SUM(amount) AS total
@@ -116,8 +120,9 @@ ORDER BY total DESC;
 -- Example Query:
 --   SELECT * FROM view_monthly_tagged_type_totals WHERE month = '2025-08-01' AND 'groceries' = ANY(tags);
 -- ============================================================================
-CREATE OR REPLACE VIEW view_monthly_tagged_type_totals AS
-SELECT
+CREATE OR REPLACE VIEW view_monthly_tagged_type_totals
+WITH(security_invoker = true)
+AS SELECT
   date_trunc('month', date) AS month,
   type,
   tags,
@@ -134,8 +139,9 @@ GROUP BY month, type, tags;
 -- Example Query:
 --   SELECT * FROM view_yearly_tagged_type_totals WHERE year = '2025-01-01' AND tags && ARRAY['groceries','bonus'];
 -- ============================================================================
-CREATE OR REPLACE VIEW view_yearly_tagged_type_totals AS
-SELECT
+CREATE OR REPLACE VIEW view_yearly_tagged_type_totals
+WITH(security_invoker = true)
+AS SELECT
   date_trunc('year', date) AS year,
   type,
   tags,
@@ -154,8 +160,9 @@ GROUP BY year, type, tags;
 -- Example Query (multiple tags):
 --   SELECT type, SUM(total) FROM view_tagged_type_totals WHERE tags && ARRAY['groceries','bonus'] GROUP BY type;
 -- ============================================================================
-CREATE OR REPLACE VIEW view_tagged_type_totals AS
-SELECT
+CREATE OR REPLACE VIEW view_tagged_type_totals
+WITH(security_invoker = true)
+AS SELECT
   type,
   tags,
   SUM(amount) AS total
