@@ -1,4 +1,3 @@
-
 -- ============================================================================
 -- View: view_monthly_totals
 -- Description:
@@ -107,3 +106,58 @@ FROM transactions
 WHERE date_trunc('year', date) = date_trunc('year', CURRENT_DATE)
 GROUP BY category, type
 ORDER BY total DESC;
+
+-- ============================================================================
+-- View: view_monthly_tagged_type_totals
+-- Description:
+--   Aggregates transaction totals by type and tags for each month.
+--   Allows filtering by month and tags.
+--
+-- Example Query:
+--   SELECT * FROM view_monthly_tagged_type_totals WHERE month = '2025-08-01' AND 'groceries' = ANY(tags);
+-- ============================================================================
+CREATE OR REPLACE VIEW view_monthly_tagged_type_totals AS
+SELECT
+  date_trunc('month', date) AS month,
+  type,
+  tags,
+  SUM(amount) AS total
+FROM transactions
+GROUP BY month, type, tags;
+
+-- ============================================================================
+-- View: view_yearly_tagged_type_totals
+-- Description:
+--   Aggregates transaction totals by type and tags for each year.
+--   Allows filtering by year and tags.
+--
+-- Example Query:
+--   SELECT * FROM view_yearly_tagged_type_totals WHERE year = '2025-01-01' AND tags && ARRAY['groceries','bonus'];
+-- ============================================================================
+CREATE OR REPLACE VIEW view_yearly_tagged_type_totals AS
+SELECT
+  date_trunc('year', date) AS year,
+  type,
+  tags,
+  SUM(amount) AS total
+FROM transactions
+GROUP BY year, type, tags;
+
+-- ============================================================================
+-- View: view_tagged_type_totals
+-- Description:
+--   Aggregates transaction totals by type for a specified tag or set of tags.
+--   Use WHERE clause with ANY or @> to filter by one or more tags.
+--
+-- Example Query (single tag):
+--   SELECT type, SUM(total) FROM view_tagged_type_totals WHERE 'groceries' = ANY(tags) GROUP BY type;
+-- Example Query (multiple tags):
+--   SELECT type, SUM(total) FROM view_tagged_type_totals WHERE tags && ARRAY['groceries','bonus'] GROUP BY type;
+-- ============================================================================
+CREATE OR REPLACE VIEW view_tagged_type_totals AS
+SELECT
+  type,
+  tags,
+  SUM(amount) AS total
+FROM transactions
+GROUP BY type, tags;
