@@ -50,6 +50,9 @@ export default function SpendPage() {
   });
   const [saving, setSaving] = useState(false);
 
+  // Selection state for deletions
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+
   // Editing state per row
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<
@@ -166,6 +169,49 @@ export default function SpendPage() {
     }
   }
 
+  async function deleteOne(id: string) {
+    try {
+      setSaving(true);
+      await DataApi.deleteTransaction(id);
+      setSelected((s) => { const c = { ...s }; delete c[id]; return c; });
+      await reload();
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to delete");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteSelected() {
+    const ids = Object.keys(selected).filter((k) => selected[k]);
+    if (!ids.length) return;
+    try {
+      setSaving(true);
+      await DataApi.deleteTransactions(ids);
+      setSelected({});
+      await reload();
+    } catch (e: any) {
+      setError(e?.message ?? "Failed to delete selected");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const allOnPageSelected = rows.length > 0 && rows.every((r) => selected[r.id]);
+  function toggleSelectAllPage() {
+    const next: Record<string, boolean> = { ...selected };
+    if (allOnPageSelected) {
+      for (const r of rows) delete next[r.id];
+    } else {
+      for (const r of rows) next[r.id] = true;
+    }
+    setSelected(next);
+  }
+
+  function toggleRow(id: string) {
+    setSelected((s) => ({ ...s, [id]: !s[id] }));
+  }
+
   return (
     <div className="p-6 space-y-6">
       <header className="flex items-center justify-between">
@@ -257,6 +303,9 @@ export default function SpendPage() {
               <button className="px-3 py-1 rounded border" onClick={() => setPage((p) => p + 1)}>
                 Next
               </button>
+              <button className="px-3 py-1 rounded border" disabled={!Object.values(selected).some(Boolean) || saving} onClick={deleteSelected}>
+                Delete Selected
+              </button>
             </div>
           </div>
 
@@ -264,6 +313,9 @@ export default function SpendPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-gray-500">
+                  <th className="py-2 w-8">
+                    <input type="checkbox" aria-label="Select all on page" checked={allOnPageSelected} onChange={toggleSelectAllPage} />
+                  </th>
                   <th className="py-2">Date</th>
                   <th className="py-2">Category</th>
                   <th className="py-2 text-right">Amount</th>
@@ -276,6 +328,9 @@ export default function SpendPage() {
               <tbody>
                 {rows.map((t) => (
                   <tr key={t.id} className="border-t align-top">
+                    <td className="py-2">
+                      <input type="checkbox" aria-label={`Select ${t.id}`} checked={!!selected[t.id]} onChange={() => toggleRow(t.id)} />
+                    </td>
                     <td className="py-2">
                       {editingId === t.id ? (
                         <input type="date" className="border rounded px-2 py-1" value={(editDraft.date as any) ?? t.date} onChange={(e) => setEditDraft({ ...editDraft, date: e.target.value })} />
@@ -325,7 +380,10 @@ export default function SpendPage() {
                           <button className="px-3 py-1 rounded border" onClick={cancelEdit}>Cancel</button>
                         </div>
                       ) : (
-                        <button className="px-3 py-1 rounded border" onClick={() => startEdit(t)}>Edit</button>
+                        <div className="flex gap-2 justify-end">
+                          <button className="px-3 py-1 rounded border" onClick={() => startEdit(t)}>Edit</button>
+                          <button className="px-3 py-1 rounded border" disabled={saving} onClick={() => deleteOne(t.id)}>Delete</button>
+                        </div>
                       )}
                     </td>
                   </tr>

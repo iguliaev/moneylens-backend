@@ -82,6 +82,17 @@ export const DataApi = {
     return data as Transaction;
   },
 
+  async deleteTransaction(id: string): Promise<void> {
+    const { error } = await db.from("transactions").delete().eq("id", id);
+    if (error) throw error;
+  },
+
+  async deleteTransactions(ids: string[]): Promise<void> {
+    if (!ids.length) return;
+    const { error } = await db.from("transactions").delete().in("id", ids);
+    if (error) throw error;
+  },
+
   // Views: totals by month/type
   async monthlyTotals(month?: string): Promise<MonthlyTotalsRow[]> {
     let q = db.from("view_monthly_totals").select("*");
