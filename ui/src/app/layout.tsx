@@ -35,6 +35,11 @@ export default function RootLayout({
                 dataProvider={dataProvider}
                 resources={[
                   {
+                    name: "dashboard",
+                    list: "/dashboard",
+                    meta: { label: "Dashboard" },
+                  },
+                  {
                     name: "blog_posts",
                     list: "/blog-posts",
                     create: "/blog-posts/create",
