@@ -93,6 +93,23 @@ export const DataApi = {
     if (error) throw error;
   },
 
+  async sumTransactionsAmount(params: ListTransactionsParams = {}): Promise<number> {
+    let q = db.from("transactions").select("amount");
+
+    if (params.from) q = q.gte("date", params.from);
+    if (params.to) q = q.lte("date", params.to);
+    if (params.type) q = q.eq("type", params.type);
+    if (params.category) q = q.eq("category", params.category);
+    if (params.bank_account) q = q.eq("bank_account", params.bank_account);
+    if (params.tagsAny?.length) q = q.overlaps("tags", params.tagsAny);
+    if (params.tagsAll?.length) q = q.contains("tags", params.tagsAll);
+
+    const { data, error } = await q;
+    if (error) throw error;
+    const total = (data as { amount: number }[]).reduce((acc, r) => acc + (r?.amount ?? 0), 0);
+    return total;
+  },
+
   // Views: totals by month/type
   async monthlyTotals(month?: string): Promise<MonthlyTotalsRow[]> {
     let q = db.from("view_monthly_totals").select("*");

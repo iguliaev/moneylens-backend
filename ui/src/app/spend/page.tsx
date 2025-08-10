@@ -53,6 +53,9 @@ export default function SpendPage() {
   // Selection state for deletions
   const [selected, setSelected] = useState<Record<string, boolean>>({});
 
+  // Filtered totals state (only shown when filters applied)
+  const [filteredTotal, setFilteredTotal] = useState<number | null>(null);
+
   // Editing state per row
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState<
@@ -68,7 +71,12 @@ export default function SpendPage() {
     const end = endOfMonthFromStart(month);
     const from = filters.from || month;
     const to = filters.to || end;
-    const [totalsRes, rowsRes] = await Promise.all([
+
+    const hasNonEmpty = !!(filters.category || filters.bank || filters.tag);
+    const isDefaultRange = from === month && to === end;
+    const isApplied = hasNonEmpty || !isDefaultRange;
+
+    const [totalsRes, rowsRes, filteredSum] = await Promise.all([
       DataApi.monthlyTotals(month),
       DataApi.listTransactions({
         type: "spend",
@@ -82,9 +90,20 @@ export default function SpendPage() {
         limit: pageSize,
         offset: (page - 1) * pageSize,
       }),
+      isApplied
+        ? DataApi.sumTransactionsAmount({
+            type: "spend",
+            from,
+            to,
+            category: filters.category || undefined,
+            bank_account: filters.bank || undefined,
+            tagsAny: filters.tag ? [filters.tag] : undefined,
+          })
+        : Promise.resolve(null),
     ]);
     setMonthlyTotals(totalsRes);
     setRows(rowsRes);
+    setFilteredTotal(filteredSum as number | null);
   }
 
   useEffect(() => {
@@ -114,6 +133,16 @@ export default function SpendPage() {
 
   // Since monthlyTotals is already filtered by month, just pick spend
   const totalSpend = (monthlyTotals.find((x) => x.type === "spend")?.total) ?? 0;
+
+  // Derived: whether filters are applied vs default month window and empty fields
+  const filtersApplied = useMemo(() => {
+    const end = endOfMonthFromStart(month);
+    const from = filters.from || month;
+    const to = filters.to || end;
+    const hasNonEmpty = !!(filters.category || filters.bank || filters.tag);
+    const isDefaultRange = from === month && to === end;
+    return hasNonEmpty || !isDefaultRange;
+  }, [filters.category, filters.bank, filters.tag, filters.from, filters.to, month]);
 
   // Handlers: create
   async function handleCreate(e: React.FormEvent) {
@@ -230,6 +259,9 @@ export default function SpendPage() {
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard title="Total Spent (Current Month)" value={fmtCurrency(totalSpend)} className="bg-red-50 border-red-200" />
+        {filtersApplied && (
+          <StatCard title="Total Spent (Filtered)" value={fmtCurrency(filteredTotal ?? 0)} className="bg-blue-50 border-blue-200" />
+        )}
       </section>
 
       <section className="border rounded p-4">
