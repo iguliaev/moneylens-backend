@@ -45,6 +45,11 @@ export default function RootLayout({
                     meta: { label: "Spend" },
                   },
                   {
+                    name: "earn",
+                    list: "/earn",
+                    meta: { label: "Earn" },
+                  },
+                  {
                     name: "blog_posts",
                     list: "/blog-posts",
                     create: "/blog-posts/create",
