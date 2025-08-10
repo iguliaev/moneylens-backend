@@ -94,20 +94,18 @@ export const DataApi = {
   },
 
   async sumTransactionsAmount(params: ListTransactionsParams = {}): Promise<number> {
-    let q = db.from("transactions").select("amount");
-
-    if (params.from) q = q.gte("date", params.from);
-    if (params.to) q = q.lte("date", params.to);
-    if (params.type) q = q.eq("type", params.type);
-    if (params.category) q = q.eq("category", params.category);
-    if (params.bank_account) q = q.eq("bank_account", params.bank_account);
-    if (params.tagsAny?.length) q = q.overlaps("tags", params.tagsAny);
-    if (params.tagsAll?.length) q = q.contains("tags", params.tagsAll);
-
-    const { data, error } = await q;
+    const { data, error } = await db.rpc("sum_transactions_amount", {
+      p_from: params.from ?? null,
+      p_to: params.to ?? null,
+      p_type: (params.type as any) ?? null,
+      p_category: params.category ?? null,
+      p_bank_account: params.bank_account ?? null,
+      p_tags_any: params.tagsAny ?? null,
+      p_tags_all: params.tagsAll ?? null,
+    });
     if (error) throw error;
-    const total = (data as { amount: number }[]).reduce((acc, r) => acc + (r?.amount ?? 0), 0);
-    return total;
+    // Supabase returns scalar as data directly (number)
+    return (data as unknown as number) ?? 0;
   },
 
   // Views: totals by month/type
