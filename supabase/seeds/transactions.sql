@@ -1,7 +1,7 @@
 INSERT INTO transactions (id, user_id, date, type, category, amount, tags, notes, bank_account)
 SELECT
   uuid_generate_v4(),
-  'eae9a6b6-46c0-42ec-ab00-358eaac243c5',
+  (SELECT id FROM auth.users WHERE email = 'user@example.com'),
   CURRENT_DATE - (random() * 365)::int,
   (ARRAY['earn'::transaction_type, 'spend'::transaction_type, 'save'::transaction_type])[floor(random() * 3 + 1)],
   (ARRAY['food', 'salary', 'entertainment', 'transport', 'health', 'investment', 'gift', 'shopping'])[floor(random() * 8 + 1)],
