@@ -65,6 +65,7 @@ export interface ListTransactionsParams {
   to?: string;   // YYYY-MM-DD
   type?: TransactionType;
   category?: string;
+  bank_account?: string;
   tagsAny?: string[]; // match any of these tags
   tagsAll?: string[]; // must include all of these tags
   limit?: number;

@@ -32,6 +32,13 @@ export default function SpendPage() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
 
+  // Filters
+  const [filters, setFilters] = useState<{ category: string; from: string; to: string; bank: string; tag: string }>(() => {
+    const from = month;
+    const to = endOfMonthFromStart(month);
+    return { category: "", from, to, bank: "", tag: "" };
+  });
+
   // Create form state
   const [form, setForm] = useState<{ date: string; category: string; amount: string; bank_account: string; tags: string; notes: string }>({
     date: new Date().toISOString().slice(0, 10),
@@ -56,9 +63,22 @@ export default function SpendPage() {
 
   async function reload() {
     const end = endOfMonthFromStart(month);
+    const from = filters.from || month;
+    const to = filters.to || end;
     const [totalsRes, rowsRes] = await Promise.all([
       DataApi.monthlyTotals(month),
-      DataApi.listTransactions({ type: "spend", from: month, to: end, orderBy: "date", orderDir: "desc", limit: pageSize, offset: (page - 1) * pageSize }),
+      DataApi.listTransactions({
+        type: "spend",
+        from,
+        to,
+        category: filters.category || undefined,
+        bank_account: filters.bank || undefined,
+        tagsAny: filters.tag ? [filters.tag] : undefined,
+        orderBy: "date",
+        orderDir: "desc",
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+      }),
     ]);
     setMonthlyTotals(totalsRes);
     setRows(rowsRes);
@@ -83,6 +103,11 @@ export default function SpendPage() {
       mounted = false;
     };
   }, [month, page, pageSize]);
+
+  useEffect(() => {
+    // when month changes, sync default filter range
+    setFilters((f) => ({ ...f, from: month, to: endOfMonthFromStart(month) }));
+  }, [month]);
 
   // Since monthlyTotals is already filtered by month, just pick spend
   const totalSpend = (monthlyTotals.find((x) => x.type === "spend")?.total) ?? 0;
@@ -159,6 +184,35 @@ export default function SpendPage() {
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard title="Total Spent (Current Month)" value={fmtCurrency(totalSpend)} className="bg-red-50 border-red-200" />
+      </section>
+
+      <section className="border rounded p-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
+          <div>
+            <label className="block text-xs text-gray-500">Category</label>
+            <input className="border rounded px-2 py-1 w-full" value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })} />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500">From</label>
+            <input type="date" className="border rounded px-2 py-1 w-full" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })} />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500">To</label>
+            <input type="date" className="border rounded px-2 py-1 w-full" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500">Bank Account</label>
+            <input className="border rounded px-2 py-1 w-full" value={filters.bank} onChange={(e) => setFilters({ ...filters, bank: e.target.value })} />
+          </div>
+          <div>
+            <label className="block text-xs text-gray-500">Tag</label>
+            <input className="border rounded px-2 py-1 w-full" value={filters.tag} onChange={(e) => setFilters({ ...filters, tag: e.target.value })} />
+          </div>
+        </div>
+        <div className="mt-3 flex gap-2">
+          <button className="px-3 py-1 rounded border" onClick={() => { setPage(1); reload(); }}>Apply</button>
+          <button className="px-3 py-1 rounded border" onClick={() => { setFilters({ category: "", from: month, to: endOfMonthFromStart(month), bank: "", tag: "" }); setPage(1); reload(); }}>Reset</button>
+        </div>
       </section>
 
       <section className="space-y-4">

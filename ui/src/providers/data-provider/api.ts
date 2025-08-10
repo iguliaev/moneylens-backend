@@ -25,7 +25,8 @@ export const DataApi = {
     if (params.to) q = q.lte("date", params.to);
     if (params.type) q = q.eq("type", params.type);
     if (params.category) q = q.eq("category", params.category);
-    if (params.tagsAny?.length) q = q.contains("tags", params.tagsAny);
+    if (params.bank_account) q = q.eq("bank_account", params.bank_account);
+    if (params.tagsAny?.length) q = q.overlaps("tags", params.tagsAny);
     if (params.tagsAll?.length) q = q.contains("tags", params.tagsAll);
 
     if (params.orderBy) q = order(q, params.orderBy, params.orderDir !== "desc");
