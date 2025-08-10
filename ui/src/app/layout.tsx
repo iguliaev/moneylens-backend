@@ -40,6 +40,11 @@ export default function RootLayout({
                     meta: { label: "Dashboard" },
                   },
                   {
+                    name: "spend",
+                    list: "/spend",
+                    meta: { label: "Spend" },
+                  },
+                  {
                     name: "blog_posts",
                     list: "/blog-posts",
                     create: "/blog-posts/create",
