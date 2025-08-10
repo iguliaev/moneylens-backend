@@ -37,6 +37,50 @@ export const DataApi = {
     return data as Transaction[];
   },
 
+  async createSpend(input: {
+    date: string; // YYYY-MM-DD
+    category?: string | null;
+    amount: number;
+    tags?: string[] | null;
+    notes?: string | null;
+    bank_account?: string | null;
+  }): Promise<Transaction> {
+    const { data: authData, error: authError } = await db.auth.getUser();
+    if (authError) throw authError;
+    const userId = authData.user?.id;
+    if (!userId) throw new Error("Not authenticated");
+
+    const payload = {
+      user_id: userId,
+      date: input.date,
+      type: "spend" as TransactionType,
+      category: input.category ?? null,
+      amount: input.amount,
+      tags: input.tags ?? null,
+      notes: input.notes ?? null,
+      bank_account: input.bank_account ?? null,
+    };
+
+    const { data, error } = await db
+      .from("transactions")
+      .insert(payload)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data as Transaction;
+  },
+
+  async updateTransaction(id: string, changes: Partial<Pick<Transaction, "date" | "category" | "amount" | "tags" | "notes" | "bank_account" | "type">>): Promise<Transaction> {
+    const { data, error } = await db
+      .from("transactions")
+      .update(changes)
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data as Transaction;
+  },
+
   // Views: totals by month/type
   async monthlyTotals(month?: string): Promise<MonthlyTotalsRow[]> {
     let q = db.from("view_monthly_totals").select("*");
