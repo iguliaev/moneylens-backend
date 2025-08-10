@@ -8,21 +8,22 @@ function fmtCurrency(n: number) {
   return new Intl.NumberFormat(undefined, { style: "currency", currency: "GBP" }).format(n);
 }
 
-function startOfMonthISO(d = new Date()) {
-  const x = new Date(d);
-  x.setDate(1);
-  return x.toISOString().slice(0, 10);
+// Build YYYY-MM-01 in local time (no UTC conversion)
+function startOfMonthStr(d = new Date()) {
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  return `${y}-${String(m).padStart(2, "0")}-01`;
 }
 
-function endOfMonthISO(iso: string) {
-  const d = new Date(iso);
-  d.setMonth(d.getMonth() + 1);
-  d.setDate(0);
-  return d.toISOString().slice(0, 10);
+// Given YYYY-MM-01, return YYYY-MM-DD for the month's last day
+function endOfMonthFromStart(start: string) {
+  const [y, m] = start.split("-").map(Number);
+  const last = new Date(y, m, 0);
+  return `${y}-${String(m).padStart(2, "0")}-${String(last.getDate()).padStart(2, "0")}`;
 }
 
 export default function SpendPage() {
-  const [month, setMonth] = useState<string>(startOfMonthISO());
+  const [month, setMonth] = useState<string>(startOfMonthStr());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +55,7 @@ export default function SpendPage() {
   const monthLabel = useMemo(() => new Date(month).toLocaleDateString(undefined, { month: "long", year: "numeric" }), [month]);
 
   async function reload() {
-    const end = endOfMonthISO(month);
+    const end = endOfMonthFromStart(month);
     const [totalsRes, rowsRes] = await Promise.all([
       DataApi.monthlyTotals(month),
       DataApi.listTransactions({ type: "spend", from: month, to: end, orderBy: "date", orderDir: "desc", limit: pageSize, offset: (page - 1) * pageSize }),
@@ -83,7 +84,8 @@ export default function SpendPage() {
     };
   }, [month, page, pageSize]);
 
-  const totalSpend = monthlyTotals.find((x) => x.month === month && x.type === "spend")?.total ?? 0;
+  // Since monthlyTotals is already filtered by month, just pick spend
+  const totalSpend = (monthlyTotals.find((x) => x.type === "spend")?.total) ?? 0;
 
   // Handlers: create
   async function handleCreate(e: React.FormEvent) {
