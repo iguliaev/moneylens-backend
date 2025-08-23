@@ -176,7 +176,11 @@ export const DataApi = {
 
   // Views: totals by month/type
   async monthlyTotals(month?: string): Promise<MonthlyTotalsRow[]> {
-    let q = db.from("view_monthly_totals").select("*");
+    const { data: authData, error: authError } = await db.auth.getUser();
+    if (authError) throw authError;
+    const userId = authData.user?.id;
+    if (!userId) throw new Error("Not authenticated");
+    let q = db.from("view_monthly_totals").select("*").eq("user_id", userId);
     if (month) q = q.eq("month", month);
     const { data, error } = await q;
     if (error) throw error;
@@ -184,7 +188,11 @@ export const DataApi = {
   },
 
   async yearlyTotals(year?: string): Promise<YearlyTotalsRow[]> {
-    let q = db.from("view_yearly_totals").select("*");
+    const { data: authData, error: authError } = await db.auth.getUser();
+    if (authError) throw authError;
+    const userId = authData.user?.id;
+    if (!userId) throw new Error("Not authenticated");
+    let q = db.from("view_yearly_totals").select("*").eq("user_id", userId);
     if (year) q = q.eq("year", year);
     const { data, error } = await q;
     if (error) throw error;
@@ -192,7 +200,11 @@ export const DataApi = {
   },
 
   async monthlyCategoryTotals(month?: string): Promise<MonthlyCategoryTotalsRow[]> {
-    let q = db.from("view_monthly_category_totals").select("*");
+    const { data: authData, error: authError } = await db.auth.getUser();
+    if (authError) throw authError;
+    const userId = authData.user?.id;
+    if (!userId) throw new Error("Not authenticated");
+    let q = db.from("view_monthly_category_totals").select("*").eq("user_id", userId);
     if (month) q = q.eq("month", month);
     const { data, error } = await q;
     if (error) throw error;
@@ -200,7 +212,11 @@ export const DataApi = {
   },
 
   async yearlyCategoryTotals(year?: string): Promise<YearlyCategoryTotalsRow[]> {
-    let q = db.from("view_yearly_category_totals").select("*");
+    const { data: authData, error: authError } = await db.auth.getUser();
+    if (authError) throw authError;
+    const userId = authData.user?.id;
+    if (!userId) throw new Error("Not authenticated");
+    let q = db.from("view_yearly_category_totals").select("*").eq("user_id", userId);
     if (year) q = q.eq("year", year);
     const { data, error } = await q;
     if (error) throw error;
@@ -208,7 +224,11 @@ export const DataApi = {
   },
 
   async monthlyTaggedTypeTotals(month?: string, tagsAny?: string[]): Promise<MonthlyTaggedTypeTotalsRow[]> {
-    let q = db.from("view_monthly_tagged_type_totals").select("*");
+    const { data: authData, error: authError } = await db.auth.getUser();
+    if (authError) throw authError;
+    const userId = authData.user?.id;
+    if (!userId) throw new Error("Not authenticated");
+    let q = db.from("view_monthly_tagged_type_totals").select("*").eq("user_id", userId);
     if (month) q = q.eq("month", month);
     if (tagsAny?.length) q = q.overlaps("tags", tagsAny);
     const { data, error } = await q;
@@ -217,7 +237,11 @@ export const DataApi = {
   },
 
   async yearlyTaggedTypeTotals(year?: string, tagsAny?: string[]): Promise<YearlyTaggedTypeTotalsRow[]> {
-    let q = db.from("view_yearly_tagged_type_totals").select("*");
+    const { data: authData, error: authError } = await db.auth.getUser();
+    if (authError) throw authError;
+    const userId = authData.user?.id;
+    if (!userId) throw new Error("Not authenticated");
+    let q = db.from("view_yearly_tagged_type_totals").select("*").eq("user_id", userId);
     if (year) q = q.eq("year", year);
     if (tagsAny?.length) q = q.overlaps("tags", tagsAny);
     const { data, error } = await q;
@@ -226,7 +250,11 @@ export const DataApi = {
   },
 
   async taggedTypeTotals(tagsAny?: string[]): Promise<TaggedTypeTotalsRow[]> {
-    let q = db.from("view_tagged_type_totals").select("*");
+    const { data: authData, error: authError } = await db.auth.getUser();
+    if (authError) throw authError;
+    const userId = authData.user?.id;
+    if (!userId) throw new Error("Not authenticated");
+    let q = db.from("view_tagged_type_totals").select("*").eq("user_id", userId);
     if (tagsAny?.length) q = q.overlaps("tags", tagsAny);
     const { data, error } = await q;
     if (error) throw error;
