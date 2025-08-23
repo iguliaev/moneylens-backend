@@ -1,3 +1,13 @@
+-- Views for spendings, earnings, and savings (using enum comparison)
+CREATE OR REPLACE VIEW transactions_spend AS
+SELECT * FROM transactions WHERE type = 'spend'::transaction_type;
+
+CREATE OR REPLACE VIEW transactions_earn AS
+SELECT * FROM transactions WHERE type = 'earn'::transaction_type;
+
+CREATE OR REPLACE VIEW transactions_save AS
+SELECT * FROM transactions WHERE type = 'save'::transaction_type;
+
 -- ============================================================================
 -- View: view_monthly_totals
 -- Description:
