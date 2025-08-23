@@ -32,10 +32,9 @@ export const DataApi = {
 
     if (params.from) q = q.gte("date", params.from);
     if (params.to) q = q.lte("date", params.to);
-    if (params.type) q = q.eq("type", params.type);
-  // Prefer filtering by categoryId (authoritative FK) when available
+  if (params.type) q = q.eq("type", params.type);
+  // Filter by authoritative FK only
   if (params.categoryId) q = q.eq("category_id", params.categoryId);
-  else if (params.category) q = q.eq("category", params.category);
     if (params.bank_account) q = q.eq("bank_account", params.bank_account);
     if (params.tagsAny?.length) q = q.overlaps("tags", params.tagsAny);
     if (params.tagsAll?.length) q = q.contains("tags", params.tagsAll);
@@ -177,25 +176,11 @@ export const DataApi = {
   },
 
   async sumTransactionsAmount(params: ListTransactionsParams = {}): Promise<number> {
-    // Prefer new RPC by category_id when provided; fallback to legacy by category name
-    if (params.categoryId) {
-      const { data, error } = await db.rpc("sum_transactions_amount_v2", {
-        p_from: params.from ?? null,
-        p_to: params.to ?? null,
-        p_type: (params.type as any) ?? null,
-        p_category_id: params.categoryId,
-        p_bank_account: params.bank_account ?? null,
-        p_tags_any: params.tagsAny ?? null,
-        p_tags_all: params.tagsAll ?? null,
-      });
-      if (error) throw error;
-      return (data as unknown as number) ?? 0;
-    }
     const { data, error } = await db.rpc("sum_transactions_amount", {
       p_from: params.from ?? null,
       p_to: params.to ?? null,
       p_type: (params.type as any) ?? null,
-      p_category: params.category ?? null,
+      p_category_id: params.categoryId ?? null,
       p_bank_account: params.bank_account ?? null,
       p_tags_any: params.tagsAny ?? null,
       p_tags_all: params.tagsAll ?? null,

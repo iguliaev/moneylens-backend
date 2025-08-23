@@ -75,7 +75,6 @@ export interface ListTransactionsParams {
   from?: string; // YYYY-MM-DD
   to?: string;   // YYYY-MM-DD
   type?: TransactionType;
-  category?: string;
   categoryId?: string;
   bank_account?: string;
   tagsAny?: string[]; // match any of these tags
