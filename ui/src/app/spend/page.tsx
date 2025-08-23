@@ -34,16 +34,16 @@ export default function SpendPage() {
   const [categories, setCategories] = useState<Category[]>([]);
 
   // Filters
-  const [filters, setFilters] = useState<{ category: string; from: string; to: string; bank: string; tag: string }>(() => {
+  const [filters, setFilters] = useState<{ categoryId: string; from: string; to: string; bank: string; tag: string }>(() => {
     const from = month;
     const to = endOfMonthFromStart(month);
-    return { category: "", from, to, bank: "", tag: "" };
+    return { categoryId: "", from, to, bank: "", tag: "" };
   });
 
   // Create form state
-  const [form, setForm] = useState<{ date: string; category: string; amount: string; bank_account: string; tags: string; notes: string }>({
+  const [form, setForm] = useState<{ date: string; categoryId: string; amount: string; bank_account: string; tags: string; notes: string }>({
     date: new Date().toISOString().slice(0, 10),
-    category: "",
+    categoryId: "",
     amount: "",
     bank_account: "",
     tags: "",
@@ -73,7 +73,7 @@ export default function SpendPage() {
     const from = filters.from || month;
     const to = filters.to || end;
 
-    const hasNonEmpty = !!(filters.category || filters.bank || filters.tag);
+  const hasNonEmpty = !!(filters.categoryId || filters.bank || filters.tag);
     const isDefaultRange = from === month && to === end;
     const isApplied = hasNonEmpty || !isDefaultRange;
 
@@ -83,7 +83,7 @@ export default function SpendPage() {
         type: "spend",
         from,
         to,
-        category: filters.category || undefined,
+  categoryId: filters.categoryId || undefined,
         bank_account: filters.bank || undefined,
         tagsAny: filters.tag ? [filters.tag] : undefined,
         orderBy: "date",
@@ -96,7 +96,7 @@ export default function SpendPage() {
             type: "spend",
             from,
             to,
-            category: filters.category || undefined,
+            category: filters.categoryId ? (categories.find(c => c.id === filters.categoryId)?.name) || undefined : undefined,
             bank_account: filters.bank || undefined,
             tagsAny: filters.tag ? [filters.tag] : undefined,
           })
@@ -145,10 +145,10 @@ export default function SpendPage() {
     const end = endOfMonthFromStart(month);
     const from = filters.from || month;
     const to = filters.to || end;
-    const hasNonEmpty = !!(filters.category || filters.bank || filters.tag);
+  const hasNonEmpty = !!(filters.categoryId || filters.bank || filters.tag);
     const isDefaultRange = from === month && to === end;
     return hasNonEmpty || !isDefaultRange;
-  }, [filters.category, filters.bank, filters.tag, filters.from, filters.to, month]);
+  }, [filters.categoryId, filters.bank, filters.tag, filters.from, filters.to, month]);
 
   // Handlers: create
   async function handleCreate(e: React.FormEvent) {
@@ -157,7 +157,7 @@ export default function SpendPage() {
       setSaving(true);
       await DataApi.createSpend({
         date: form.date,
-        category: form.category || null,
+        categoryId: form.categoryId || null,
         amount: parseFloat(form.amount || "0"),
         bank_account: form.bank_account || null,
         tags: form.tags ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : null,
@@ -187,7 +187,7 @@ export default function SpendPage() {
     try {
       setSaving(true);
       const changes: any = {};
-      const fields: (keyof Transaction)[] = ["date", "category", "amount", "bank_account", "notes", "tags"];
+  const fields: (keyof Transaction)[] = ["date", "category", "category_id", "amount", "bank_account", "notes", "tags"];
       for (const k of fields) {
         if (k in editDraft) changes[k] = (editDraft as any)[k];
       }
@@ -273,11 +273,11 @@ export default function SpendPage() {
       <section className="border rounded p-4">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
           <div>
-            <label className="block text-xs text-gray-500">Category</label>
-            <select className="border rounded px-2 py-1 w-full" value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })}>
+      <label className="block text-xs text-gray-500">Category</label>
+      <select className="border rounded px-2 py-1 w-full" value={filters.categoryId} onChange={(e) => setFilters({ ...filters, categoryId: e.target.value })}>
               <option value="">All</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.name}>{c.name}</option>
+        <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
@@ -300,7 +300,7 @@ export default function SpendPage() {
         </div>
         <div className="mt-3 flex gap-2">
           <button className="px-3 py-1 rounded border" onClick={() => { setPage(1); reload(); }}>Apply</button>
-          <button className="px-3 py-1 rounded border" onClick={() => { setFilters({ category: "", from: month, to: endOfMonthFromStart(month), bank: "", tag: "" }); setPage(1); reload(); }}>Reset</button>
+          <button className="px-3 py-1 rounded border" onClick={() => { setFilters({ categoryId: "", from: month, to: endOfMonthFromStart(month), bank: "", tag: "" }); setPage(1); reload(); }}>Reset</button>
         </div>
       </section>
 
@@ -311,11 +311,11 @@ export default function SpendPage() {
             <input type="date" className="border rounded px-2 py-1 w-full" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
           </div>
           <div>
-            <label className="block text-xs text-gray-500">Category</label>
-            <select className="border rounded px-2 py-1 w-full" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+      <label className="block text-xs text-gray-500">Category</label>
+      <select className="border rounded px-2 py-1 w-full" value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
               <option value="">— Select —</option>
               {categories.map((c) => (
-                <option key={c.id} value={c.name}>{c.name}</option>
+        <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
@@ -388,14 +388,14 @@ export default function SpendPage() {
                     </td>
                     <td className="py-2">
                         {editingId === t.id ? (
-                        <select className="border rounded px-2 py-1" value={(editDraft.category as any) ?? t.category ?? ""} onChange={(e) => setEditDraft({ ...editDraft, category: e.target.value })}>
+            <select className="border rounded px-2 py-1" value={(editDraft.category_id as any) ?? (t as any).category_id ?? ""} onChange={(e) => setEditDraft({ ...editDraft, category_id: e.target.value })}>
                           <option value="">— Select —</option>
                           {categories.map((c) => (
-                            <option key={c.id} value={c.name}>{c.name}</option>
+              <option key={c.id} value={c.id}>{c.name}</option>
                           ))}
                         </select>
                       ) : (
-                          t.category || (t as any).category_id ? (categories.find(c => c.id === (t as any).category_id)?.name ?? "—") : "—"
+            t.category || (t as any).category_id ? (categories.find(c => c.id === (t as any).category_id)?.name ?? "—") : "—"
                       )}
                     </td>
                     <td className="py-2 text-right">

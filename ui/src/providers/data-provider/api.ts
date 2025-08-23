@@ -33,7 +33,9 @@ export const DataApi = {
     if (params.from) q = q.gte("date", params.from);
     if (params.to) q = q.lte("date", params.to);
     if (params.type) q = q.eq("type", params.type);
-    if (params.category) q = q.eq("category", params.category);
+  // Prefer filtering by categoryId (authoritative FK) when available
+  if (params.categoryId) q = q.eq("category_id", params.categoryId);
+  else if (params.category) q = q.eq("category", params.category);
     if (params.bank_account) q = q.eq("bank_account", params.bank_account);
     if (params.tagsAny?.length) q = q.overlaps("tags", params.tagsAny);
     if (params.tagsAll?.length) q = q.contains("tags", params.tagsAll);
@@ -50,6 +52,7 @@ export const DataApi = {
   async createSpend(input: {
     date: string; // YYYY-MM-DD
     category?: string | null;
+    categoryId?: string | null;
     amount: number;
     tags?: string[] | null;
     notes?: string | null;
@@ -65,6 +68,7 @@ export const DataApi = {
       date: input.date,
       type: "spend" as TransactionType,
       category: input.category ?? null,
+      category_id: input.categoryId ?? null,
       amount: input.amount,
       tags: input.tags ?? null,
       notes: input.notes ?? null,
@@ -83,6 +87,7 @@ export const DataApi = {
   async createEarn(input: {
     date: string; // YYYY-MM-DD
     category?: string | null;
+    categoryId?: string | null;
     amount: number;
     tags?: string[] | null;
     notes?: string | null;
@@ -98,6 +103,7 @@ export const DataApi = {
       date: input.date,
       type: "earn" as TransactionType,
       category: input.category ?? null,
+      category_id: input.categoryId ?? null,
       amount: input.amount,
       tags: input.tags ?? null,
       notes: input.notes ?? null,
@@ -116,6 +122,7 @@ export const DataApi = {
   async createSave(input: {
     date: string; // YYYY-MM-DD
     category?: string | null;
+    categoryId?: string | null;
     amount: number;
     tags?: string[] | null;
     notes?: string | null;
@@ -131,6 +138,7 @@ export const DataApi = {
       date: input.date,
       type: "save" as TransactionType,
       category: input.category ?? null,
+      category_id: input.categoryId ?? null,
       amount: input.amount,
       tags: input.tags ?? null,
       notes: input.notes ?? null,
@@ -146,7 +154,7 @@ export const DataApi = {
     return data as Transaction;
   },
 
-  async updateTransaction(id: string, changes: Partial<Pick<Transaction, "date" | "category" | "amount" | "tags" | "notes" | "bank_account" | "type">>): Promise<Transaction> {
+  async updateTransaction(id: string, changes: Partial<Pick<Transaction, "date" | "category" | "category_id" | "amount" | "tags" | "notes" | "bank_account" | "type">>): Promise<Transaction> {
     const { data, error } = await db
       .from("transactions")
       .update(changes)
