@@ -20,11 +20,38 @@ const order = <T>(query: any, column: string, ascending: boolean) =>
 export const DataApi = {
   // Tables
   async listCategories(type?: TransactionType): Promise<Category[]> {
-    let q = db.from("categories").select("*");
+    let q = db.from("categories").select("*").order("name", { ascending: true });
     if (type) q = q.eq("type", type);
     const { data, error } = await q;
     if (error) throw error;
     return data as Category[];
+  },
+
+  async createCategory(input: { type: TransactionType; name: string; description?: string | null }): Promise<Category> {
+    const payload = {
+      type: input.type,
+      name: input.name,
+      description: input.description ?? null,
+    };
+    const { data, error } = await db.from("categories").insert(payload).select("*").single();
+    if (error) throw error;
+    return data as Category;
+  },
+
+  async updateCategory(id: string, input: Partial<{ name: string; description: string | null }>): Promise<Category> {
+    const { data, error } = await db
+      .from("categories")
+      .update({ ...input })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data as Category;
+  },
+
+  async deleteCategory(id: string): Promise<void> {
+    const { error } = await db.from("categories").delete().eq("id", id);
+    if (error) throw error;
   },
 
   async listTransactions(params: ListTransactionsParams = {}): Promise<Transaction[]> {

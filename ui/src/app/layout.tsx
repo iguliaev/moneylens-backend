@@ -54,6 +54,11 @@ export default function RootLayout({
                     list: "/save",
                     meta: { label: "Save" },
                   },
+                  {
+                    name: "settings",
+                    list: "/settings",
+                    meta: { label: "Settings" },
+                  },
                 ]}
                 options={{
                   syncWithLocation: true,
