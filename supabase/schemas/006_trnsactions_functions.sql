@@ -14,10 +14,12 @@ stable
 as $$
   select coalesce(sum(t.amount), 0)::numeric
   from public.transactions t
+  left join public.categories c on c.id = t.category_id
   where (p_from is null or t.date >= p_from)
     and (p_to is null or t.date <= p_to)
     and (p_type is null or t.type = p_type)
-    and (p_category is null or t.category = p_category)
+    -- Match by either legacy text category or resolved category name via category_id
+    and (p_category is null or coalesce(t.category, c.name) = p_category)
     and (p_bank_account is null or t.bank_account = p_bank_account)
     and (p_tags_any is null or t.tags && p_tags_any)
     and (p_tags_all is null or t.tags @> p_tags_all);
