@@ -88,7 +88,7 @@ export default function SavePage() {
             type: "save",
             from,
             to,
-      category: filters.categoryId ? (categories.find(c => c.id === filters.categoryId)?.name) || undefined : undefined,
+            categoryId: filters.categoryId || undefined,
             bank_account: filters.bank || undefined,
             tagsAny: filters.tag ? [filters.tag] : undefined,
           })

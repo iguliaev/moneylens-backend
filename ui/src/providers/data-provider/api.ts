@@ -177,6 +177,20 @@ export const DataApi = {
   },
 
   async sumTransactionsAmount(params: ListTransactionsParams = {}): Promise<number> {
+    // Prefer new RPC by category_id when provided; fallback to legacy by category name
+    if (params.categoryId) {
+      const { data, error } = await db.rpc("sum_transactions_amount_v2", {
+        p_from: params.from ?? null,
+        p_to: params.to ?? null,
+        p_type: (params.type as any) ?? null,
+        p_category_id: params.categoryId,
+        p_bank_account: params.bank_account ?? null,
+        p_tags_any: params.tagsAny ?? null,
+        p_tags_all: params.tagsAll ?? null,
+      });
+      if (error) throw error;
+      return (data as unknown as number) ?? 0;
+    }
     const { data, error } = await db.rpc("sum_transactions_amount", {
       p_from: params.from ?? null,
       p_to: params.to ?? null,
@@ -187,7 +201,6 @@ export const DataApi = {
       p_tags_all: params.tagsAll ?? null,
     });
     if (error) throw error;
-    // Supabase returns scalar as data directly (number)
     return (data as unknown as number) ?? 0;
   },
 
