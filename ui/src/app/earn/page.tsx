@@ -1,7 +1,7 @@
 "use client";
 
 import { DataApi } from "@providers/data-provider/api";
-import type { MonthlyTotalsRow, Transaction } from "@providers/data-provider/types";
+import type { MonthlyTotalsRow, Transaction, Category } from "@providers/data-provider/types";
 import { useEffect, useMemo, useState } from "react";
 
 function fmtCurrency(n: number) {
@@ -29,6 +29,7 @@ export default function EarnPage() {
   const [rows, setRows] = useState<Transaction[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   const [filters, setFilters] = useState<{ category: string; from: string; to: string; bank: string; tag: string }>(() => {
     const from = month;
@@ -77,7 +78,7 @@ export default function EarnPage() {
         category: filters.category || undefined,
         bank_account: filters.bank || undefined,
         tagsAny: filters.tag ? [filters.tag] : undefined,
-        orderBy: "date",
+  orderBy: "date",
         orderDir: "desc",
         limit: pageSize,
         offset: (page - 1) * pageSize,
@@ -104,6 +105,11 @@ export default function EarnPage() {
       try {
         setLoading(true);
         setError(null);
+        const [cats] = await Promise.all([
+          DataApi.listCategories("earn"),
+        ]);
+        if (!mounted) return;
+        setCategories(cats);
         await reload();
       } catch (e: any) {
         if (!mounted) return;
@@ -254,15 +260,33 @@ export default function EarnPage() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
           <div>
             <label className="block text-xs text-gray-500">Category</label>
-            <input className="border rounded px-2 py-1 w-full" value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })} />
+            <select
+              className="border rounded px-2 py-1 w-full"
+              value={filters.category}
+              onChange={(e) => setFilters({ ...filters, category: e.target.value })}
+            >
+              <option value="">All</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-xs text-gray-500">From</label>
             <input type="date" className="border rounded px-2 py-1 w-full" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })} />
-          </div>
           <div>
-            <label className="block text-xs text-gray-500">To</label>
-            <input type="date" className="border rounded px-2 py-1 w-full" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} />
+            <label className="block text-xs text-gray-500">Category</label>
+            <select
+              className="border rounded px-2 py-1 w-full"
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+            >
+              <option value="">— Select —</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+          </div>
           </div>
           <div>
             <label className="block text-xs text-gray-500">Bank Account</label>
@@ -280,14 +304,23 @@ export default function EarnPage() {
       </section>
 
       <section className="space-y-4">
-        <form onSubmit={handleCreate} className="border rounded p-4 grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+  <form onSubmit={handleCreate} className="border rounded p-4 grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
           <div>
             <label className="block text-xs text-gray-500">Date</label>
             <input type="date" className="border rounded px-2 py-1 w-full" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
           </div>
           <div>
             <label className="block text-xs text-gray-500">Category</label>
-            <input type="text" className="border rounded px-2 py-1 w-full" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+            <select
+              className="border rounded px-2 py-1 w-full"
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+            >
+              <option value="">— Select —</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-xs text-gray-500">Amount</label>
@@ -358,9 +391,18 @@ export default function EarnPage() {
                     </td>
                     <td className="py-2">
                       {editingId === t.id ? (
-                        <input type="text" className="border rounded px-2 py-1" value={(editDraft.category as any) ?? t.category ?? ""} onChange={(e) => setEditDraft({ ...editDraft, category: e.target.value })} />
+                        <select
+                          className="border rounded px-2 py-1"
+                          value={(editDraft.category as any) ?? t.category ?? ""}
+                          onChange={(e) => setEditDraft({ ...editDraft, category: e.target.value })}
+                        >
+                          <option value="">— Select —</option>
+                          {categories.map((c) => (
+                            <option key={c.id} value={c.name}>{c.name}</option>
+                          ))}
+                        </select>
                       ) : (
-                        t.category || "—"
+                        t.category || (t as any).category_id ? (categories.find(c => c.id === (t as any).category_id)?.name ?? "—") : "—"
                       )}
                     </td>
                     <td className="py-2 text-right">

@@ -1,7 +1,7 @@
 "use client";
 
 import { DataApi } from "@providers/data-provider/api";
-import type { MonthlyTotalsRow, Transaction } from "@providers/data-provider/types";
+import type { MonthlyTotalsRow, Transaction, Category } from "@providers/data-provider/types";
 import { useEffect, useMemo, useState } from "react";
 
 function fmtCurrency(n: number) {
@@ -31,6 +31,7 @@ export default function SpendPage() {
   const [rows, setRows] = useState<Transaction[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   // Filters
   const [filters, setFilters] = useState<{ category: string; from: string; to: string; bank: string; tag: string }>(() => {
@@ -112,6 +113,11 @@ export default function SpendPage() {
       try {
         setLoading(true);
         setError(null);
+        const [cats] = await Promise.all([
+          DataApi.listCategories("spend"),
+        ]);
+        if (!mounted) return;
+        setCategories(cats);
         await reload();
       } catch (e: any) {
         if (!mounted) return;
@@ -268,7 +274,12 @@ export default function SpendPage() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
           <div>
             <label className="block text-xs text-gray-500">Category</label>
-            <input className="border rounded px-2 py-1 w-full" value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })} />
+            <select className="border rounded px-2 py-1 w-full" value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })}>
+              <option value="">All</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-xs text-gray-500">From</label>
@@ -301,7 +312,12 @@ export default function SpendPage() {
           </div>
           <div>
             <label className="block text-xs text-gray-500">Category</label>
-            <input type="text" className="border rounded px-2 py-1 w-full" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+            <select className="border rounded px-2 py-1 w-full" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })}>
+              <option value="">— Select —</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.name}>{c.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-xs text-gray-500">Amount</label>
@@ -371,10 +387,15 @@ export default function SpendPage() {
                       )}
                     </td>
                     <td className="py-2">
-                      {editingId === t.id ? (
-                        <input type="text" className="border rounded px-2 py-1" value={(editDraft.category as any) ?? t.category ?? ""} onChange={(e) => setEditDraft({ ...editDraft, category: e.target.value })} />
+                        {editingId === t.id ? (
+                        <select className="border rounded px-2 py-1" value={(editDraft.category as any) ?? t.category ?? ""} onChange={(e) => setEditDraft({ ...editDraft, category: e.target.value })}>
+                          <option value="">— Select —</option>
+                          {categories.map((c) => (
+                            <option key={c.id} value={c.name}>{c.name}</option>
+                          ))}
+                        </select>
                       ) : (
-                        t.category || "—"
+                          t.category || (t as any).category_id ? (categories.find(c => c.id === (t as any).category_id)?.name ?? "—") : "—"
                       )}
                     </td>
                     <td className="py-2 text-right">

@@ -10,6 +10,7 @@ import type {
   Transaction,
   ListTransactionsParams,
   TransactionType,
+  Category,
 } from "./types";
 
 // Helper to order by when needed
@@ -18,6 +19,14 @@ const order = <T>(query: any, column: string, ascending: boolean) =>
 
 export const DataApi = {
   // Tables
+  async listCategories(type?: TransactionType): Promise<Category[]> {
+    let q = db.from("categories").select("*");
+    if (type) q = q.eq("type", type);
+    const { data, error } = await q;
+    if (error) throw error;
+    return data as Category[];
+  },
+
   async listTransactions(params: ListTransactionsParams = {}): Promise<Transaction[]> {
     let q = db.from("transactions").select("*");
 

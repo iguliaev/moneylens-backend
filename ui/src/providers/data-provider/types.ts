@@ -6,10 +6,21 @@ export interface Transaction {
   date: string; // YYYY-MM-DD
   type: TransactionType;
   category: string | null;
+  category_id?: string | null;
   amount: number;
   tags: string[] | null;
   notes: string | null;
   bank_account: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Category {
+  id: string;
+  user_id: string;
+  type: TransactionType;
+  name: string;
+  description?: string | null;
   created_at: string;
   updated_at: string;
 }
