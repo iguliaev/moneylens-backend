@@ -1,5 +1,5 @@
--- 001_categories.sql
--- Migration: Create categories table for user-defined transaction categories
+-- 005_categories.sql
+-- Create categories table for user-defined transaction categories
 
 CREATE TABLE IF NOT EXISTS categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
