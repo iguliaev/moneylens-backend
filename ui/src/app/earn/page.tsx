@@ -274,19 +274,10 @@ export default function EarnPage() {
           <div>
             <label className="block text-xs text-gray-500">From</label>
             <input type="date" className="border rounded px-2 py-1 w-full" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })} />
-          <div>
-            <label className="block text-xs text-gray-500">Category</label>
-            <select
-              className="border rounded px-2 py-1 w-full"
-              value={form.categoryId}
-              onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-            >
-              <option value="">— Select —</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
           </div>
+          <div>
+            <label className="block text-xs text-gray-500">To</label>
+            <input type="date" className="border rounded px-2 py-1 w-full" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} />
           </div>
           <div>
             <label className="block text-xs text-gray-500">Bank Account</label>
