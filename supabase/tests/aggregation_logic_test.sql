@@ -41,42 +41,42 @@ select tests.authenticate_as('user1@test.com');
 
 -- Test 1: view_monthly_totals for August 2025, type 'spend'
 select results_eq(
-    $$ select total from view_monthly_totals where month = '2025-08-01' and type = 'spend' $$,
+    $$ select total from view_monthly_totals where user_id = tests.get_supabase_uid('user1@test.com') and month = '2025-08-01' and type = 'spend' $$,
     array[150.00::numeric],
     'view_monthly_totals returns correct sum for August 2025, spend'
 );
 
 -- Test 2: view_monthly_totals for August 2025, type 'earn'
 select results_eq(
-    $$ select total from view_monthly_totals where month = '2025-08-01' and type = 'earn' $$,
+    $$ select total from view_monthly_totals where user_id = tests.get_supabase_uid('user1@test.com') and month = '2025-08-01' and type = 'earn' $$,
     array[1000.00::numeric],
     'view_monthly_totals returns correct sum for August 2025, earn'
 );
 
 -- Test 3: view_monthly_totals for August 2025, type 'save'
 select results_eq(
-    $$ select total from view_monthly_totals where month = '2025-08-01' and type = 'save' $$,
+    $$ select total from view_monthly_totals where user_id = tests.get_supabase_uid('user1@test.com') and month = '2025-08-01' and type = 'save' $$,
     array[150.00::numeric],
     'view_monthly_totals returns correct sum for August 2025, save'
 );
 
 -- Test 4: view_yearly_totals for 2025, type 'spend'
 select results_eq(
-    $$ select total from view_yearly_totals where year = '2025-01-01' and type = 'spend' $$,
+    $$ select total from view_yearly_totals where user_id = tests.get_supabase_uid('user1@test.com') and year = '2025-01-01' and type = 'spend' $$,
     array[300.00::numeric],
     'view_yearly_totals returns correct sum for 2025, spend'
 );
 
 -- Test 5: view_yearly_totals for 2025, type 'earn'
 select results_eq(
-    $$ select total from view_yearly_totals where year = '2025-01-01' and type = 'earn' $$,
+    $$ select total from view_yearly_totals where user_id = tests.get_supabase_uid('user1@test.com') and year = '2025-01-01' and type = 'earn' $$,
     array[2000.00::numeric],
     'view_yearly_totals returns correct sum for 2025, earn'
 );
 
 -- Test 6: view_yearly_totals for 2025, type 'save'
 select results_eq(
-    $$ select total from view_yearly_totals where year = '2025-01-01' and type = 'save' $$,
+    $$ select total from view_yearly_totals where user_id = tests.get_supabase_uid('user1@test.com') and year = '2025-01-01' and type = 'save' $$,
     array[300.00::numeric],
     'view_yearly_totals returns correct sum for 2025, save'
 );
@@ -86,7 +86,7 @@ select results_eq(
     $$
     select category, type::text as type, total
     from view_monthly_category_totals
-    where month = '2025-08-01'
+    where user_id = tests.get_supabase_uid('user1@test.com') and month = '2025-08-01'
     order by category, type
     $$,
     $$
@@ -105,7 +105,7 @@ select results_eq(
     $$
     select category, type::text as type, total
     from view_yearly_category_totals
-    where year = '2025-01-01'
+    where user_id = tests.get_supabase_uid('user1@test.com') and year = '2025-01-01'
     order by category, type
     $$,
     $$
@@ -124,7 +124,7 @@ select results_eq(
     $$
     select type::text as type, tags, total
     from view_monthly_tagged_type_totals
-    where month = '2025-08-01' and 'groceries' = any(tags)
+    where user_id = tests.get_supabase_uid('user1@test.com') and month = '2025-08-01' and 'groceries' = any(tags)
     order by type, tags::text
     $$,
     $$
@@ -142,7 +142,7 @@ select results_eq(
     $$
     select type::text as type, tags, total
     from view_yearly_tagged_type_totals
-    where year = '2025-01-01' and 'groceries' = any(tags)
+    where user_id = tests.get_supabase_uid('user1@test.com') and year = '2025-01-01' and 'groceries' = any(tags)
     order by type, tags::text
     $$,
     $$
@@ -160,6 +160,7 @@ select results_eq(
     $$
     select type::text as type, tags, total
     from view_tagged_type_totals
+    where user_id = tests.get_supabase_uid('user1@test.com')
     order by type, tags::text
     $$,
     $$
