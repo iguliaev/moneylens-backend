@@ -35,27 +35,31 @@ ORDER BY user_id, year DESC, type;
 -- ============================================================================
 CREATE OR REPLACE VIEW view_monthly_category_totals
 WITH(security_invoker = true)
-AS SELECT
-  user_id,
-  date_trunc('month', date) AS month,
-  category,
-  type,
-  SUM(amount) AS total
-FROM transactions
-GROUP BY user_id, month, category, type
-ORDER BY user_id, month DESC, category, type;
+AS
+SELECT
+  t.user_id,
+  date_trunc('month', t.date) AS month,
+  c.name AS category,
+  t.type,
+  SUM(t.amount) AS total
+FROM transactions t
+JOIN categories c ON t.category_id = c.id
+GROUP BY t.user_id, date_trunc('month', t.date), c.name, t.type
+ORDER BY t.user_id, month DESC, category, t.type;
 -- ============================================================================
 CREATE OR REPLACE VIEW view_yearly_category_totals
 WITH(security_invoker = true)
-AS SELECT
-  user_id,
-  date_trunc('year', date) AS year,
-  category,
-  type,
-  SUM(amount) AS total
-FROM transactions
-GROUP BY user_id, year, category, type
-ORDER BY user_id, year DESC, category, type;
+AS
+SELECT
+  t.user_id,
+  date_trunc('year', t.date) AS year,
+  c.name AS category,
+  t.type,
+  SUM(t.amount) AS total
+FROM transactions t
+JOIN categories c ON t.category_id = c.id
+GROUP BY t.user_id, date_trunc('year', t.date), c.name, t.type
+ORDER BY t.user_id, year DESC, category, t.type;
 -- ============================================================================
 CREATE OR REPLACE VIEW view_monthly_tagged_type_totals
 WITH(security_invoker = true)

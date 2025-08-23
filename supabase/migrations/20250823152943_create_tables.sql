@@ -145,14 +145,15 @@ create or replace view "public"."transactions_spend" as  SELECT id,
   WHERE (type = 'spend'::transaction_type);
 
 
-create or replace view "public"."view_monthly_category_totals" as  SELECT user_id,
-    date_trunc('month'::text, (date)::timestamp with time zone) AS month,
-    category,
-    type,
-    sum(amount) AS total
-   FROM transactions
-  GROUP BY user_id, (date_trunc('month'::text, (date)::timestamp with time zone)), category, type
-  ORDER BY user_id, (date_trunc('month'::text, (date)::timestamp with time zone)) DESC, category, type;
+create or replace view "public"."view_monthly_category_totals" as  SELECT t.user_id,
+    date_trunc('month'::text, (t.date)::timestamp with time zone) AS month,
+    c.name AS category,
+    t.type,
+    sum(t.amount) AS total
+   FROM (transactions t
+     JOIN categories c ON ((t.category_id = c.id)))
+  GROUP BY t.user_id, (date_trunc('month'::text, (t.date)::timestamp with time zone)), c.name, t.type
+  ORDER BY t.user_id, (date_trunc('month'::text, (t.date)::timestamp with time zone)) DESC, c.name, t.type;
 
 
 create or replace view "public"."view_monthly_tagged_type_totals" as  SELECT user_id,
@@ -181,14 +182,15 @@ create or replace view "public"."view_tagged_type_totals" as  SELECT user_id,
   GROUP BY user_id, type, tags;
 
 
-create or replace view "public"."view_yearly_category_totals" as  SELECT user_id,
-    date_trunc('year'::text, (date)::timestamp with time zone) AS year,
-    category,
-    type,
-    sum(amount) AS total
-   FROM transactions
-  GROUP BY user_id, (date_trunc('year'::text, (date)::timestamp with time zone)), category, type
-  ORDER BY user_id, (date_trunc('year'::text, (date)::timestamp with time zone)) DESC, category, type;
+create or replace view "public"."view_yearly_category_totals" as  SELECT t.user_id,
+    date_trunc('year'::text, (t.date)::timestamp with time zone) AS year,
+    c.name AS category,
+    t.type,
+    sum(t.amount) AS total
+   FROM (transactions t
+     JOIN categories c ON ((t.category_id = c.id)))
+  GROUP BY t.user_id, (date_trunc('year'::text, (t.date)::timestamp with time zone)), c.name, t.type
+  ORDER BY t.user_id, (date_trunc('year'::text, (t.date)::timestamp with time zone)) DESC, c.name, t.type;
 
 
 create or replace view "public"."view_yearly_tagged_type_totals" as  SELECT user_id,

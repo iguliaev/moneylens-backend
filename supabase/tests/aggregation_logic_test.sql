@@ -8,32 +8,55 @@ select plan(11);
 select tests.create_supabase_user('user1@test.com');
 select tests.create_supabase_user('user2@test.com');
 
--- Insert test data for monthly totals
-insert into transactions (id, user_id, date, type, category, amount, tags, notes, bank_account) values
-    (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-01', 'spend', 'food', 100.00, array['groceries'], 'Lunch', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-02', 'spend', 'food', 50.00, array['groceries'], 'Dinner', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-03', 'earn', 'salary', 1000.00, array['salary'], 'August Salary', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-04', 'save', 'vacation', 150.00, array['groceries'], 'Vacation', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-01', 'spend', 'food', 200.00, array['groceries'], 'Lunch', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-02', 'spend', 'food', 100.00, array['groceries'], 'Dinner', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-03', 'earn', 'salary', 2000.00, array['salary'], 'August Salary', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-04', 'save', 'vacation', 150.00, array['groceries'], 'Vacation', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-07-01', 'spend', 'food', 100.00, array['groceries'], 'Lunch', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-06-02', 'spend', 'food', 50.00, array['groceries'], 'Dinner', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-05-03', 'earn', 'salary', 1000.00, array['salary'], 'August Salary', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-04-04', 'save', 'vacation', 150.00, array['groceries'], 'Vacation', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-07-01', 'spend', 'food', 200.00, array['groceries'], 'Lunch', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-06-02', 'spend', 'food', 100.00, array['groceries'], 'Dinner', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-05-03', 'earn', 'salary', 2000.00, array['salary'], 'August Salary', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-04-04', 'save', 'vacation', 150.00, array['groceries'], 'Vacation', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2024-08-01', 'spend', 'food', 100.00, array['groceries'], 'Lunch', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2024-08-02', 'spend', 'food', 50.00, array['groceries'], 'Dinner', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2024-08-03', 'earn', 'salary', 1000.00, array['salary'], 'August Salary', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2024-08-04', 'save', 'vacation', 150.00, array['groceries'], 'Vacation', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2024-08-01', 'spend', 'food', 200.00, array['groceries'], 'Lunch', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2024-08-02', 'spend', 'food', 100.00, array['groceries'], 'Dinner', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2024-08-03', 'earn', 'salary', 2000.00, array['salary'], 'August Salary', 'Test Bank'),
-    (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2024-08-04', 'save', 'vacation', 150.00, array['groceries'], 'Vacation', 'Test Bank');
+
+-- Insert test categories for each user and type, and use CTEs to reference their IDs
+WITH
+  cat_food_user1 AS (
+    INSERT INTO categories (id, user_id, type, name, description, created_at, updated_at)
+    VALUES (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), 'spend', 'food', 'Food', now(), now())
+    RETURNING id
+  ),
+  cat_salary_user1 AS (
+    INSERT INTO categories (id, user_id, type, name, description, created_at, updated_at)
+    VALUES (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), 'earn', 'salary', 'Salary', now(), now())
+    RETURNING id
+  ),
+  cat_vacation_user1 AS (
+    INSERT INTO categories (id, user_id, type, name, description, created_at, updated_at)
+    VALUES (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), 'save', 'vacation', 'Vacation', now(), now())
+    RETURNING id
+  ),
+  cat_food_user2 AS (
+    INSERT INTO categories (id, user_id, type, name, description, created_at, updated_at)
+    VALUES (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), 'spend', 'food', 'Food', now(), now())
+    RETURNING id
+  ),
+  cat_salary_user2 AS (
+    INSERT INTO categories (id, user_id, type, name, description, created_at, updated_at)
+    VALUES (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), 'earn', 'salary', 'Salary', now(), now())
+    RETURNING id
+  ),
+  cat_vacation_user2 AS (
+    INSERT INTO categories (id, user_id, type, name, description, created_at, updated_at)
+    VALUES (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), 'save', 'vacation', 'Vacation', now(), now())
+    RETURNING id
+  )
+INSERT INTO transactions (id, user_id, date, type, category_id, amount, tags, notes, bank_account)
+(
+SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-01'::date, 'spend'::transaction_type, cat_food_user1.id, 100.00, array['groceries'], 'Lunch', 'Test Bank' FROM cat_food_user1
+UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-02'::date, 'spend'::transaction_type, cat_food_user1.id, 50.00, array['groceries'], 'Dinner', 'Test Bank' FROM cat_food_user1
+UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-03'::date, 'earn'::transaction_type, cat_salary_user1.id, 1000.00, array['salary'], 'August Salary', 'Test Bank' FROM cat_salary_user1
+UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-04'::date, 'save'::transaction_type, cat_vacation_user1.id, 150.00, array['groceries'], 'Vacation', 'Test Bank' FROM cat_vacation_user1
+UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-07-01'::date, 'spend'::transaction_type, cat_food_user1.id, 100.00, array['groceries'], 'Lunch', 'Test Bank' FROM cat_food_user1
+UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-06-02'::date, 'spend'::transaction_type, cat_food_user1.id, 50.00, array['groceries'], 'Dinner', 'Test Bank' FROM cat_food_user1
+UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-05-03'::date, 'earn'::transaction_type, cat_salary_user1.id, 1000.00, array['salary'], 'August Salary', 'Test Bank' FROM cat_salary_user1
+UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-04-03'::date, 'earn'::transaction_type, cat_salary_user1.id, 1000.00, array['salary'], 'May Salary', 'Test Bank' FROM cat_salary_user1
+UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-04-04'::date, 'save'::transaction_type, cat_vacation_user1.id, 150.00, array['groceries'], 'Vacation', 'Test Bank' FROM cat_vacation_user1
+UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-01'::date, 'spend'::transaction_type, cat_food_user2.id, 200.00, array['groceries'], 'Lunch', 'Test Bank' FROM cat_food_user2
+UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-02'::date, 'spend'::transaction_type, cat_food_user2.id, 100.00, array['groceries'], 'Dinner', 'Test Bank' FROM cat_food_user2
+UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-03'::date, 'earn'::transaction_type, cat_salary_user2.id, 2000.00, array['salary'], 'August Salary', 'Test Bank' FROM cat_salary_user2
+UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-04'::date, 'save'::transaction_type, cat_vacation_user2.id, 150.00, array['groceries'], 'Vacation', 'Test Bank' FROM cat_vacation_user2
+);
 
 
 -- as User 1
@@ -70,7 +93,7 @@ select results_eq(
 -- Test 5: view_yearly_totals for 2025, type 'earn'
 select results_eq(
     $$ select total from view_yearly_totals where user_id = tests.get_supabase_uid('user1@test.com') and year = '2025-01-01' and type = 'earn' $$,
-    array[2000.00::numeric],
+    array[3000.00::numeric],
     'view_yearly_totals returns correct sum for 2025, earn'
 );
 
@@ -111,7 +134,7 @@ select results_eq(
     $$
     select * from (values
       ('food'::text, 'spend'::text, 300.00::numeric),
-      ('salary'::text, 'earn'::text, 2000.00::numeric),
+      ('salary'::text, 'earn'::text, 3000.00::numeric),
       ('vacation'::text, 'save'::text, 300.00::numeric)
     ) as t(category, type, total)
     order by category, type
@@ -166,8 +189,8 @@ select results_eq(
     $$
     select * from (values
       ('earn'::text, array['salary']::text[], 3000.00::numeric),
-      ('save'::text, array['groceries']::text[], 450.00::numeric),
-      ('spend'::text, array['groceries']::text[], 450.00::numeric)
+      ('save'::text, array['groceries']::text[], 300.00::numeric),
+      ('spend'::text, array['groceries']::text[], 300.00::numeric)
     ) as t(type, tags, total)
     order by type, tags::text
     $$,
