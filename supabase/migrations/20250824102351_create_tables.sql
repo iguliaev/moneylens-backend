@@ -65,6 +65,19 @@ alter table "public"."transactions" validate constraint "transactions_user_id_fk
 
 set check_function_bodies = off;
 
+CREATE OR REPLACE FUNCTION public.categories_set_user_id()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    IF NEW.user_id IS NULL THEN
+        NEW.user_id := auth.uid();
+    END IF;
+    RETURN NEW;
+END;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.check_transaction_category_type()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -94,6 +107,17 @@ AS $function$
     and (p_bank_account is null or t.bank_account = p_bank_account)
     and (p_tags_any is null or t.tags && p_tags_any)
     and (p_tags_all is null or t.tags @> p_tags_all);
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.tg_set_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+BEGIN
+    NEW.updated_at := now();
+    RETURN NEW;
+END;
 $function$
 ;
 
@@ -296,13 +320,40 @@ grant truncate on table "public"."transactions" to "service_role";
 grant update on table "public"."transactions" to "service_role";
 
 
-  create policy "Allow owner full access"
+  create policy "categories_delete"
   on "public"."categories"
   as permissive
-  for all
+  for delete
   to public
-using ((auth.uid() = user_id))
-with check ((auth.uid() = user_id));
+using ((user_id = auth.uid()));
+
+
+
+  create policy "categories_insert"
+  on "public"."categories"
+  as permissive
+  for insert
+  to public
+with check ((user_id = auth.uid()));
+
+
+
+  create policy "categories_select"
+  on "public"."categories"
+  as permissive
+  for select
+  to public
+using ((user_id = auth.uid()));
+
+
+
+  create policy "categories_update"
+  on "public"."categories"
+  as permissive
+  for update
+  to public
+using ((user_id = auth.uid()))
+with check ((user_id = auth.uid()));
 
 
 
@@ -340,6 +391,10 @@ using ((auth.uid() = user_id));
   to public
 using ((auth.uid() = user_id));
 
+
+CREATE TRIGGER set_updated_at_on_categories BEFORE UPDATE ON public.categories FOR EACH ROW EXECUTE FUNCTION tg_set_updated_at();
+
+CREATE TRIGGER set_user_id_on_categories BEFORE INSERT ON public.categories FOR EACH ROW EXECUTE FUNCTION categories_set_user_id();
 
 CREATE TRIGGER transaction_category_type_trigger BEFORE INSERT OR UPDATE ON public.transactions FOR EACH ROW EXECUTE FUNCTION check_transaction_category_type();
 
