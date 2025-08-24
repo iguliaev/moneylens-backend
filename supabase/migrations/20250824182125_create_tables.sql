@@ -93,6 +93,47 @@ END;
 $function$
 ;
 
+CREATE OR REPLACE FUNCTION public.delete_category_safe(p_category_id uuid)
+ RETURNS TABLE(ok boolean, in_use_count bigint)
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_uid uuid;
+begin
+  -- Ensure caller is authenticated
+  v_uid := auth.uid();
+  if v_uid is null then
+    raise exception 'Not authenticated' using errcode = '28000';
+  end if;
+
+  -- Ensure the category exists and belongs to the caller
+  if not exists (
+    select 1 from public.categories c where c.id = p_category_id and c.user_id = v_uid
+  ) then
+    raise exception 'Category not found' using errcode = 'P0002';
+  end if;
+
+  -- Count references
+  select count(*) into in_use_count
+  from public.transactions t
+  where t.category_id = p_category_id and t.user_id = v_uid;
+
+  if in_use_count > 0 then
+    ok := false;
+    return;
+  end if;
+
+  -- Not referenced: delete it
+  delete from public.categories c where c.id = p_category_id and c.user_id = v_uid;
+  ok := true;
+  in_use_count := 0;
+  return;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.sum_transactions_amount(p_from date DEFAULT NULL::date, p_to date DEFAULT NULL::date, p_type transaction_type DEFAULT NULL::transaction_type, p_category_id uuid DEFAULT NULL::uuid, p_bank_account text DEFAULT NULL::text, p_tags_any text[] DEFAULT NULL::text[], p_tags_all text[] DEFAULT NULL::text[])
  RETURNS numeric
  LANGUAGE sql
@@ -115,7 +156,8 @@ CREATE OR REPLACE FUNCTION public.tg_set_updated_at()
  LANGUAGE plpgsql
 AS $function$
 BEGIN
-    NEW.updated_at := now();
+    -- clock_timestamp() returns the actual wall-clock time, not the transaction start time
+    NEW.updated_at := clock_timestamp();
     RETURN NEW;
 END;
 $function$

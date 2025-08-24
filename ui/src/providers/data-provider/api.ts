@@ -50,8 +50,13 @@ export const DataApi = {
   },
 
   async deleteCategory(id: string): Promise<void> {
-    const { error } = await db.from("categories").delete().eq("id", id);
+    // Prefer RPC to avoid raw FK violations and get an actionable result
+    const { data, error } = await db.rpc("delete_category_safe", { p_category_id: id });
     if (error) throw error;
+    const row = (Array.isArray(data) ? data[0] : data) as { ok: boolean; in_use_count: number } | null;
+    if (row && row.ok === false) {
+      throw new Error(`Category is in use by ${row.in_use_count} transaction(s)`);
+    }
   },
 
   async listTransactions(params: ListTransactionsParams = {}): Promise<Transaction[]> {
