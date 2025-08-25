@@ -1,6 +1,19 @@
 create type "public"."transaction_type" as enum ('earn', 'spend', 'save');
 
 
+  create table "public"."bank_accounts" (
+    "id" uuid not null default gen_random_uuid(),
+    "user_id" uuid not null,
+    "name" text not null,
+    "description" text,
+    "created_at" timestamp with time zone not null default now(),
+    "updated_at" timestamp with time zone not null default now()
+      );
+
+
+alter table "public"."bank_accounts" enable row level security;
+
+
   create table "public"."categories" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid not null,
@@ -27,13 +40,18 @@ alter table "public"."categories" enable row level security;
     "notes" text,
     "bank_account" text,
     "created_at" timestamp with time zone not null default now(),
-    "updated_at" timestamp with time zone not null default now()
+    "updated_at" timestamp with time zone not null default now(),
+    "bank_account_id" uuid
       );
 
 
 alter table "public"."transactions" enable row level security;
 
+CREATE UNIQUE INDEX bank_accounts_pkey ON public.bank_accounts USING btree (id);
+
 CREATE UNIQUE INDEX categories_pkey ON public.categories USING btree (id);
+
+CREATE INDEX idx_bank_accounts_user ON public.bank_accounts USING btree (user_id);
 
 CREATE INDEX idx_categories_user_type ON public.categories USING btree (user_id, type);
 
@@ -41,9 +59,19 @@ CREATE UNIQUE INDEX transactions_pkey ON public.transactions USING btree (id);
 
 CREATE UNIQUE INDEX unique_user_type_name ON public.categories USING btree (user_id, type, name);
 
+CREATE UNIQUE INDEX uq_bank_accounts_user_name ON public.bank_accounts USING btree (user_id, name);
+
+alter table "public"."bank_accounts" add constraint "bank_accounts_pkey" PRIMARY KEY using index "bank_accounts_pkey";
+
 alter table "public"."categories" add constraint "categories_pkey" PRIMARY KEY using index "categories_pkey";
 
 alter table "public"."transactions" add constraint "transactions_pkey" PRIMARY KEY using index "transactions_pkey";
+
+alter table "public"."bank_accounts" add constraint "bank_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE not valid;
+
+alter table "public"."bank_accounts" validate constraint "bank_accounts_user_id_fkey";
+
+alter table "public"."bank_accounts" add constraint "uq_bank_accounts_user_name" UNIQUE using index "uq_bank_accounts_user_name";
 
 alter table "public"."categories" add constraint "categories_user_id_fkey" FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE not valid;
 
@@ -55,6 +83,10 @@ alter table "public"."transactions" add constraint "transactions_amount_check" C
 
 alter table "public"."transactions" validate constraint "transactions_amount_check";
 
+alter table "public"."transactions" add constraint "transactions_bank_account_id_fkey" FOREIGN KEY (bank_account_id) REFERENCES bank_accounts(id) not valid;
+
+alter table "public"."transactions" validate constraint "transactions_bank_account_id_fkey";
+
 alter table "public"."transactions" add constraint "transactions_category_id_fkey" FOREIGN KEY (category_id) REFERENCES categories(id) not valid;
 
 alter table "public"."transactions" validate constraint "transactions_category_id_fkey";
@@ -64,6 +96,35 @@ alter table "public"."transactions" add constraint "transactions_user_id_fkey" F
 alter table "public"."transactions" validate constraint "transactions_user_id_fkey";
 
 set check_function_bodies = off;
+
+CREATE OR REPLACE FUNCTION public.bank_accounts_set_user_id()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+  if new.user_id is null then
+    new.user_id := auth.uid();
+  end if;
+  return new;
+end;
+$function$
+;
+
+create or replace view "public"."bank_accounts_with_usage" as  SELECT b.id,
+    b.user_id,
+    b.name,
+    b.description,
+    b.created_at,
+    b.updated_at,
+    COALESCE(u.cnt, (0)::bigint) AS in_use_count
+   FROM (bank_accounts b
+     LEFT JOIN ( SELECT transactions.user_id,
+            transactions.bank_account_id,
+            count(*) AS cnt
+           FROM transactions
+          WHERE (transactions.bank_account_id IS NOT NULL)
+          GROUP BY transactions.user_id, transactions.bank_account_id) u ON (((u.user_id = b.user_id) AND (u.bank_account_id = b.id))));
+
 
 CREATE OR REPLACE FUNCTION public.categories_set_user_id()
  RETURNS trigger
@@ -95,6 +156,24 @@ create or replace view "public"."categories_with_usage" as  SELECT c.id,
           GROUP BY transactions.user_id, transactions.category_id) u ON (((u.user_id = c.user_id) AND (u.category_id = c.id))));
 
 
+CREATE OR REPLACE FUNCTION public.check_transaction_bank_account()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+begin
+  if new.bank_account_id is not null then
+    if not exists (
+      select 1 from public.bank_accounts b
+      where b.id = new.bank_account_id and b.user_id = new.user_id
+    ) then
+      raise exception 'Bank account does not belong to the user' using errcode = '23514';
+    end if;
+  end if;
+  return new;
+end;
+$function$
+;
+
 CREATE OR REPLACE FUNCTION public.check_transaction_category_type()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -107,6 +186,43 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.delete_bank_account_safe(p_bank_account_id uuid)
+ RETURNS TABLE(ok boolean, in_use_count bigint)
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_uid uuid;
+begin
+  v_uid := auth.uid();
+  if v_uid is null then
+    raise exception 'Not authenticated' using errcode = '28000';
+  end if;
+
+  if not exists (
+    select 1 from public.bank_accounts b where b.id = p_bank_account_id and b.user_id = v_uid
+  ) then
+    raise exception 'Bank account not found' using errcode = 'P0002';
+  end if;
+
+  select count(*) into in_use_count
+  from public.transactions t
+  where t.bank_account_id = p_bank_account_id and t.user_id = v_uid;
+
+  if in_use_count > 0 then
+    -- Emit a single row indicating it's in use
+    return query select false::boolean as ok, in_use_count::bigint;
+    return;
+  end if;
+
+  delete from public.bank_accounts b where b.id = p_bank_account_id and b.user_id = v_uid;
+  -- Emit success row
+  return query select true::boolean as ok, 0::bigint as in_use_count;
+  return;
+end;
 $function$
 ;
 
@@ -294,6 +410,48 @@ create or replace view "public"."view_yearly_totals" as  SELECT user_id,
   ORDER BY user_id, (date_trunc('year'::text, (date)::timestamp with time zone)) DESC, type;
 
 
+grant delete on table "public"."bank_accounts" to "anon";
+
+grant insert on table "public"."bank_accounts" to "anon";
+
+grant references on table "public"."bank_accounts" to "anon";
+
+grant select on table "public"."bank_accounts" to "anon";
+
+grant trigger on table "public"."bank_accounts" to "anon";
+
+grant truncate on table "public"."bank_accounts" to "anon";
+
+grant update on table "public"."bank_accounts" to "anon";
+
+grant delete on table "public"."bank_accounts" to "authenticated";
+
+grant insert on table "public"."bank_accounts" to "authenticated";
+
+grant references on table "public"."bank_accounts" to "authenticated";
+
+grant select on table "public"."bank_accounts" to "authenticated";
+
+grant trigger on table "public"."bank_accounts" to "authenticated";
+
+grant truncate on table "public"."bank_accounts" to "authenticated";
+
+grant update on table "public"."bank_accounts" to "authenticated";
+
+grant delete on table "public"."bank_accounts" to "service_role";
+
+grant insert on table "public"."bank_accounts" to "service_role";
+
+grant references on table "public"."bank_accounts" to "service_role";
+
+grant select on table "public"."bank_accounts" to "service_role";
+
+grant trigger on table "public"."bank_accounts" to "service_role";
+
+grant truncate on table "public"."bank_accounts" to "service_role";
+
+grant update on table "public"."bank_accounts" to "service_role";
+
 grant delete on table "public"."categories" to "anon";
 
 grant insert on table "public"."categories" to "anon";
@@ -379,6 +537,43 @@ grant truncate on table "public"."transactions" to "service_role";
 grant update on table "public"."transactions" to "service_role";
 
 
+  create policy "bank_accounts_delete"
+  on "public"."bank_accounts"
+  as permissive
+  for delete
+  to public
+using ((user_id = auth.uid()));
+
+
+
+  create policy "bank_accounts_insert"
+  on "public"."bank_accounts"
+  as permissive
+  for insert
+  to public
+with check ((user_id = auth.uid()));
+
+
+
+  create policy "bank_accounts_select"
+  on "public"."bank_accounts"
+  as permissive
+  for select
+  to public
+using ((user_id = auth.uid()));
+
+
+
+  create policy "bank_accounts_update"
+  on "public"."bank_accounts"
+  as permissive
+  for update
+  to public
+using ((user_id = auth.uid()))
+with check ((user_id = auth.uid()));
+
+
+
   create policy "categories_delete"
   on "public"."categories"
   as permissive
@@ -451,9 +646,15 @@ using ((auth.uid() = user_id));
 using ((auth.uid() = user_id));
 
 
+CREATE TRIGGER set_updated_at_on_bank_accounts BEFORE UPDATE ON public.bank_accounts FOR EACH ROW EXECUTE FUNCTION tg_set_updated_at();
+
+CREATE TRIGGER set_user_id_on_bank_accounts BEFORE INSERT ON public.bank_accounts FOR EACH ROW EXECUTE FUNCTION bank_accounts_set_user_id();
+
 CREATE TRIGGER set_updated_at_on_categories BEFORE UPDATE ON public.categories FOR EACH ROW EXECUTE FUNCTION tg_set_updated_at();
 
 CREATE TRIGGER set_user_id_on_categories BEFORE INSERT ON public.categories FOR EACH ROW EXECUTE FUNCTION categories_set_user_id();
+
+CREATE TRIGGER transaction_bank_account_check BEFORE INSERT OR UPDATE ON public.transactions FOR EACH ROW EXECUTE FUNCTION check_transaction_bank_account();
 
 CREATE TRIGGER transaction_category_type_trigger BEFORE INSERT OR UPDATE ON public.transactions FOR EACH ROW EXECUTE FUNCTION check_transaction_category_type();
 
