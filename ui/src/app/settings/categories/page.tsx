@@ -12,6 +12,9 @@ export default function CategoriesSettingsPage() {
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{ name: string; description: string }>({ name: "", description: "" });
 
   const refresh = async (t = type) => {
     setLoading(true);
@@ -31,26 +34,77 @@ export default function CategoriesSettingsPage() {
   const onCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    await DataApi.createCategory({ type, name: name.trim(), description: description.trim() || null });
-    setName("");
-    setDescription("");
-    await refresh();
+    try {
+      setError(null);
+      await DataApi.createCategory({ type, name: name.trim(), description: description.trim() || null });
+      setName("");
+      setDescription("");
+      await refresh();
+    } catch (e: any) {
+      setError(e?.message || "Failed to create category");
+    }
   };
 
   const onRename = async (id: string, newName: string) => {
     if (!newName.trim()) return;
-    await DataApi.updateCategory(id, { name: newName.trim() });
-    await refresh();
+    try {
+      setError(null);
+      await DataApi.updateCategory(id, { name: newName.trim() });
+      await refresh();
+    } catch (e: any) {
+      setError(e?.message || "Failed to rename category");
+      throw e; // let InlineEdit show inline error too
+    }
   };
 
   const onUpdateDescription = async (id: string, newDesc: string) => {
-    await DataApi.updateCategory(id, { description: newDesc || null });
-    await refresh();
+    try {
+      setError(null);
+      await DataApi.updateCategory(id, { description: newDesc || null });
+      await refresh();
+    } catch (e: any) {
+      setError(e?.message || "Failed to update description");
+      throw e;
+    }
   };
 
+  function startEdit(c: Category) {
+    setEditingId(c.id);
+    setDraft({ name: c.name, description: c.description ?? "" });
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setDraft({ name: "", description: "" });
+  }
+
+  async function saveEdit(id: string) {
+    const payload = {
+      name: draft.name.trim(),
+      description: draft.description.trim() ? draft.description.trim() : null,
+    } as { name?: string; description?: string | null };
+    if (!payload.name) {
+      setError("Name is required");
+      return;
+    }
+    try {
+      setError(null);
+      await DataApi.updateCategory(id, payload);
+      setEditingId(null);
+      await refresh();
+    } catch (e: any) {
+      setError(e?.message || "Failed to update category");
+    }
+  }
+
   const onDelete = async (id: string) => {
-    await DataApi.deleteCategory(id);
-    await refresh();
+    try {
+      setError(null);
+      await DataApi.deleteCategory(id);
+      await refresh();
+    } catch (e: any) {
+      setError(e?.message || "Failed to delete category");
+    }
   };
 
   const byName = useMemo(
@@ -61,6 +115,12 @@ export default function CategoriesSettingsPage() {
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-xl font-semibold">Categories</h1>
+
+      {error && (
+        <div className="border border-red-300 bg-red-50 text-red-700 px-3 py-2 rounded">
+          {error}
+        </div>
+      )}
 
       <div className="flex gap-2">
         {TYPES.map((t) => (
@@ -102,23 +162,62 @@ export default function CategoriesSettingsPage() {
             <tr className="text-left">
               <th className="p-2">Name</th>
               <th className="p-2">Description</th>
-              <th className="p-2 w-40">Actions</th>
+              <th className="p-2 w-48">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {byName.map((c) => (
-              <tr key={c.id} className="border-t">
-                <td className="p-2">
-                  <InlineEdit value={c.name} onSave={(v) => onRename(c.id, v)} />
-                </td>
-                <td className="p-2">
-                  <InlineEdit value={c.description ?? ""} onSave={(v) => onUpdateDescription(c.id, v)} />
-                </td>
-                <td className="p-2">
-                  <button className="px-2 py-1 border rounded" onClick={() => onDelete(c.id)}>Delete</button>
-                </td>
-              </tr>
-            ))}
+            {byName.map((c) => {
+              const isEditing = editingId === c.id;
+              return (
+                <tr key={c.id} className="border-t">
+                  <td className="p-2">
+                    {isEditing ? (
+                      <input
+                        className="border px-2 py-1 rounded w-full"
+                        value={draft.name}
+                        onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
+                        placeholder="Category name"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); void saveEdit(c.id); }
+                          if (e.key === "Escape") { cancelEdit(); }
+                        }}
+                      />
+                    ) : (
+                      <span>{c.name || "—"}</span>
+                    )}
+                  </td>
+                  <td className="p-2">
+                    {isEditing ? (
+                      <input
+                        className="border px-2 py-1 rounded w-full"
+                        value={draft.description}
+                        onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))}
+                        placeholder="Description (optional)"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); void saveEdit(c.id); }
+                          if (e.key === "Escape") { cancelEdit(); }
+                        }}
+                      />
+                    ) : (
+                      <span>{c.description || "—"}</span>
+                    )}
+                  </td>
+                  <td className="p-2 flex gap-2">
+                    {isEditing ? (
+                      <>
+                        <button className="px-2 py-1 border rounded" onClick={() => void saveEdit(c.id)}>Update</button>
+                        <button className="px-2 py-1 border rounded" onClick={cancelEdit}>Cancel</button>
+                      </>
+                    ) : (
+                      <>
+                        <button className="px-2 py-1 border rounded" onClick={() => startEdit(c)}>Edit</button>
+                        <button className="px-2 py-1 border rounded" onClick={() => onDelete(c.id)}>Delete</button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
             {!loading && byName.length === 0 && (
               <tr><td className="p-4 text-sm text-gray-500" colSpan={3}>No categories yet for “{type}”. Create one above.</td></tr>
             )}
@@ -126,21 +225,5 @@ export default function CategoriesSettingsPage() {
         </table>
       </div>
     </div>
-  );
-}
-
-function InlineEdit({ value, onSave }: { value: string; onSave: (v: string) => Promise<void> | void }) {
-  const [val, setVal] = useState(value);
-  const [editing, setEditing] = useState(false);
-  useEffect(() => setVal(value), [value]);
-  if (!editing) {
-    return <span onClick={() => setEditing(true)} className="cursor-text">{value || "—"}</span>;
-  }
-  return (
-    <span className="flex gap-2">
-      <input className="border px-2 py-1 rounded" value={val} onChange={(e) => setVal(e.target.value)} />
-      <button className="px-2 py-1 border rounded" onClick={async () => { await onSave(val); setEditing(false); }}>Save</button>
-      <button className="px-2 py-1 border rounded" onClick={() => { setVal(value); setEditing(false); }}>Cancel</button>
-    </span>
   );
 }
