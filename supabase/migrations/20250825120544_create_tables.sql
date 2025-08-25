@@ -78,6 +78,23 @@ END;
 $function$
 ;
 
+create or replace view "public"."categories_with_usage" as  SELECT c.id,
+    c.user_id,
+    c.type,
+    c.name,
+    c.description,
+    c.created_at,
+    c.updated_at,
+    COALESCE(u.cnt, (0)::bigint) AS in_use_count
+   FROM (categories c
+     LEFT JOIN ( SELECT transactions.user_id,
+            transactions.category_id,
+            count(*) AS cnt
+           FROM transactions
+          WHERE (transactions.category_id IS NOT NULL)
+          GROUP BY transactions.user_id, transactions.category_id) u ON (((u.user_id = c.user_id) AND (u.category_id = c.id))));
+
+
 CREATE OR REPLACE FUNCTION public.check_transaction_category_type()
  RETURNS trigger
  LANGUAGE plpgsql

@@ -23,6 +23,7 @@ export interface Category {
   description?: string | null;
   created_at: string;
   updated_at: string;
+  in_use_count?: number; // populated when reading from categories_with_usage
 }
 
 export interface MonthlyTotalsRow {

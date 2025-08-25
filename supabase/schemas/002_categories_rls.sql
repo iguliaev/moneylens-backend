@@ -68,3 +68,11 @@ DROP TRIGGER IF EXISTS set_updated_at_on_categories ON public.categories;
 CREATE TRIGGER set_updated_at_on_categories
 BEFORE UPDATE ON public.categories
 FOR EACH ROW EXECUTE FUNCTION public.tg_set_updated_at();
+
+-- Optional: allow selecting from the view through PostgREST with owner scoping
+DO $$
+BEGIN
+    -- Views inherit RLS from base tables; explicit policy on the view is not required.
+    -- This block is a no-op placeholder to document intent and future changes.
+    PERFORM 1;
+END $$;

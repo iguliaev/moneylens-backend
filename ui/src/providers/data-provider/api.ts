@@ -20,11 +20,15 @@ const order = <T>(query: any, column: string, ascending: boolean) =>
 export const DataApi = {
   // Tables
   async listCategories(type?: TransactionType): Promise<Category[]> {
-    let q = db.from("categories").select("*").order("name", { ascending: true });
+    // Read from categories_with_usage to get in_use_count
+    let q = db
+      .from("categories_with_usage")
+      .select("id,user_id,type,name,description,created_at,updated_at,in_use_count")
+      .order("name", { ascending: true });
     if (type) q = q.eq("type", type);
     const { data, error } = await q;
     if (error) throw error;
-    return data as Category[];
+    return (data as any[]) as Category[];
   },
 
   async createCategory(input: { type: TransactionType; name: string; description?: string | null }): Promise<Category> {

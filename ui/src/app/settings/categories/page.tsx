@@ -162,6 +162,7 @@ export default function CategoriesSettingsPage() {
             <tr className="text-left">
               <th className="p-2">Name</th>
               <th className="p-2">Description</th>
+              <th className="p-2 w-24">Usage</th>
               <th className="p-2 w-48">Actions</th>
             </tr>
           </thead>
@@ -202,6 +203,7 @@ export default function CategoriesSettingsPage() {
                       <span>{c.description || "—"}</span>
                     )}
                   </td>
+                  <td className="p-2">{c.in_use_count ?? 0}</td>
                   <td className="p-2 flex gap-2">
                     {isEditing ? (
                       <>
@@ -211,7 +213,14 @@ export default function CategoriesSettingsPage() {
                     ) : (
                       <>
                         <button className="px-2 py-1 border rounded" onClick={() => startEdit(c)}>Edit</button>
-                        <button className="px-2 py-1 border rounded" onClick={() => onDelete(c.id)}>Delete</button>
+                        <button
+                          className="px-2 py-1 border rounded disabled:opacity-50"
+                          disabled={(c.in_use_count ?? 0) > 0}
+                          title={(c.in_use_count ?? 0) > 0 ? `Cannot delete — used by ${(c.in_use_count ?? 0)} transaction(s)` : "Delete"}
+                          onClick={() => onDelete(c.id)}
+                        >
+                          Delete
+                        </button>
                       </>
                     )}
                   </td>
