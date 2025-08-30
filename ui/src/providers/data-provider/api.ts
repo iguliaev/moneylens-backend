@@ -11,6 +11,7 @@ import type {
   ListTransactionsParams,
   TransactionType,
   Category,
+  BankAccount,
 } from "./types";
 
 // Helper to order by when needed
@@ -29,6 +30,43 @@ export const DataApi = {
     const { data, error } = await q;
     if (error) throw error;
     return (data as any[]) as Category[];
+  },
+
+  // Bank Accounts CRUD
+  async listBankAccounts(): Promise<BankAccount[]> {
+    const { data, error } = await db
+      .from("bank_accounts_with_usage")
+      .select("id,user_id,name,description,created_at,updated_at,in_use_count")
+      .order("name", { ascending: true });
+    if (error) throw error;
+    return (data as any[]) as BankAccount[];
+  },
+
+  async createBankAccount(input: { name: string; description?: string | null }): Promise<BankAccount> {
+    const payload = { name: input.name, description: input.description ?? null };
+    const { data, error } = await db.from("bank_accounts").insert(payload).select("*").single();
+    if (error) throw error;
+    return data as BankAccount;
+  },
+
+  async updateBankAccount(id: string, input: Partial<{ name: string; description: string | null }>): Promise<BankAccount> {
+    const { data, error } = await db
+      .from("bank_accounts")
+      .update({ ...input })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data as BankAccount;
+  },
+
+  async deleteBankAccount(id: string): Promise<void> {
+    const { data, error } = await db.rpc("delete_bank_account_safe", { p_bank_account_id: id });
+    if (error) throw error;
+    const row = (Array.isArray(data) ? data[0] : data) as { ok: boolean; in_use_count: number } | null;
+    if (row && row.ok === false) {
+      throw new Error(`Bank account is in use by ${row.in_use_count} transaction(s)`);
+    }
   },
 
   async createCategory(input: { type: TransactionType; name: string; description?: string | null }): Promise<Category> {

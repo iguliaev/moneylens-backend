@@ -85,3 +85,13 @@ export interface ListTransactionsParams {
   orderBy?: keyof Transaction;
   orderDir?: 'asc' | 'desc';
 }
+
+export interface BankAccount {
+  id: string;
+  user_id: string;
+  name: string;
+  description?: string | null;
+  created_at: string;
+  updated_at: string;
+  in_use_count?: number; // populated from bank_accounts_with_usage
+}

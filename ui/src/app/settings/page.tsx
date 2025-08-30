@@ -16,7 +16,11 @@ export default function SettingsPage() {
             </Link>
           </li>
           <li className="text-gray-500">Tags (coming soon)</li>
-          <li className="text-gray-500">Bank Accounts (coming soon)</li>
+          <li>
+            <Link href="/settings/bank-accounts" className="text-blue-600 hover:underline">
+              Bank Accounts
+            </Link>
+          </li>
         </ul>
       </section>
     </div>
