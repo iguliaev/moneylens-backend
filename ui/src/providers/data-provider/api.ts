@@ -109,6 +109,7 @@ export const DataApi = {
   if (params.type) q = q.eq("type", params.type);
   // Filter by authoritative FK only
   if (params.categoryId) q = q.eq("category_id", params.categoryId);
+  if (params.bankAccountId) q = q.eq("bank_account_id", params.bankAccountId);
     if (params.bank_account) q = q.eq("bank_account", params.bank_account);
     if (params.tagsAny?.length) q = q.overlaps("tags", params.tagsAny);
     if (params.tagsAll?.length) q = q.contains("tags", params.tagsAll);
@@ -126,6 +127,7 @@ export const DataApi = {
     date: string; // YYYY-MM-DD
     category?: string | null;
     categoryId?: string | null;
+  bank_account_id?: string | null;
     amount: number;
     tags?: string[] | null;
     notes?: string | null;
@@ -142,6 +144,7 @@ export const DataApi = {
       type: "spend" as TransactionType,
       category: input.category ?? null,
       category_id: input.categoryId ?? null,
+  bank_account_id: input.bank_account_id ?? null,
       amount: input.amount,
       tags: input.tags ?? null,
       notes: input.notes ?? null,
@@ -161,6 +164,7 @@ export const DataApi = {
     date: string; // YYYY-MM-DD
     category?: string | null;
     categoryId?: string | null;
+  bank_account_id?: string | null;
     amount: number;
     tags?: string[] | null;
     notes?: string | null;
@@ -177,6 +181,7 @@ export const DataApi = {
       type: "earn" as TransactionType,
       category: input.category ?? null,
       category_id: input.categoryId ?? null,
+  bank_account_id: input.bank_account_id ?? null,
       amount: input.amount,
       tags: input.tags ?? null,
       notes: input.notes ?? null,
@@ -196,6 +201,7 @@ export const DataApi = {
     date: string; // YYYY-MM-DD
     category?: string | null;
     categoryId?: string | null;
+  bank_account_id?: string | null;
     amount: number;
     tags?: string[] | null;
     notes?: string | null;
@@ -212,6 +218,7 @@ export const DataApi = {
       type: "save" as TransactionType,
       category: input.category ?? null,
       category_id: input.categoryId ?? null,
+  bank_account_id: input.bank_account_id ?? null,
       amount: input.amount,
       tags: input.tags ?? null,
       notes: input.notes ?? null,
@@ -227,7 +234,7 @@ export const DataApi = {
     return data as Transaction;
   },
 
-  async updateTransaction(id: string, changes: Partial<Pick<Transaction, "date" | "category" | "category_id" | "amount" | "tags" | "notes" | "bank_account" | "type">>): Promise<Transaction> {
+  async updateTransaction(id: string, changes: Partial<Pick<Transaction, "date" | "category" | "category_id" | "bank_account_id" | "amount" | "tags" | "notes" | "bank_account" | "type">>): Promise<Transaction> {
     const { data, error } = await db
       .from("transactions")
       .update(changes)

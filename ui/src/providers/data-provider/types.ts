@@ -7,6 +7,7 @@ export interface Transaction {
   type: TransactionType;
   category: string | null;
   category_id?: string | null;
+  bank_account_id?: string | null;
   amount: number;
   tags: string[] | null;
   notes: string | null;
@@ -77,6 +78,7 @@ export interface ListTransactionsParams {
   to?: string;   // YYYY-MM-DD
   type?: TransactionType;
   categoryId?: string;
+  bankAccountId?: string;
   bank_account?: string;
   tagsAny?: string[]; // match any of these tags
   tagsAll?: string[]; // must include all of these tags

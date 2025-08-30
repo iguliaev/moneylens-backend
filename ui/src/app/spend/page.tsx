@@ -1,7 +1,7 @@
 "use client";
 
 import { DataApi } from "@providers/data-provider/api";
-import type { MonthlyTotalsRow, Transaction, Category } from "@providers/data-provider/types";
+import type { MonthlyTotalsRow, Transaction, Category, BankAccount } from "@providers/data-provider/types";
 import { useEffect, useMemo, useState } from "react";
 
 function fmtCurrency(n: number) {
@@ -32,20 +32,21 @@ export default function SpendPage() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
 
   // Filters
-  const [filters, setFilters] = useState<{ categoryId: string; from: string; to: string; bank: string; tag: string }>(() => {
+  const [filters, setFilters] = useState<{ categoryId: string; from: string; to: string; bankAccountId: string; tag: string }>(() => {
     const from = month;
     const to = endOfMonthFromStart(month);
-    return { categoryId: "", from, to, bank: "", tag: "" };
+    return { categoryId: "", from, to, bankAccountId: "", tag: "" };
   });
 
   // Create form state
-  const [form, setForm] = useState<{ date: string; categoryId: string; amount: string; bank_account: string; tags: string; notes: string }>({
+  const [form, setForm] = useState<{ date: string; categoryId: string; amount: string; bank_account_id: string; tags: string; notes: string }>({
     date: new Date().toISOString().slice(0, 10),
     categoryId: "",
     amount: "",
-    bank_account: "",
+    bank_account_id: "",
     tags: "",
     notes: "",
   });
@@ -73,7 +74,7 @@ export default function SpendPage() {
     const from = filters.from || month;
     const to = filters.to || end;
 
-  const hasNonEmpty = !!(filters.categoryId || filters.bank || filters.tag);
+    const hasNonEmpty = !!(filters.categoryId || filters.bankAccountId || filters.tag);
     const isDefaultRange = from === month && to === end;
     const isApplied = hasNonEmpty || !isDefaultRange;
 
@@ -83,8 +84,8 @@ export default function SpendPage() {
         type: "spend",
         from,
         to,
-  categoryId: filters.categoryId || undefined,
-        bank_account: filters.bank || undefined,
+        categoryId: filters.categoryId || undefined,
+        bankAccountId: filters.bankAccountId || undefined,
         tagsAny: filters.tag ? [filters.tag] : undefined,
         orderBy: "date",
         orderDir: "desc",
@@ -97,7 +98,7 @@ export default function SpendPage() {
             from,
             to,
             categoryId: filters.categoryId || undefined,
-            bank_account: filters.bank || undefined,
+            bank_account: (filters.bankAccountId && bankAccounts.find(b => b.id === filters.bankAccountId)?.name) || undefined,
             tagsAny: filters.tag ? [filters.tag] : undefined,
           })
         : Promise.resolve(null),
@@ -113,11 +114,13 @@ export default function SpendPage() {
       try {
         setLoading(true);
         setError(null);
-        const [cats] = await Promise.all([
+        const [cats, bas] = await Promise.all([
           DataApi.listCategories("spend"),
+          DataApi.listBankAccounts(),
         ]);
         if (!mounted) return;
         setCategories(cats);
+        setBankAccounts(bas);
         await reload();
       } catch (e: any) {
         if (!mounted) return;
@@ -145,10 +148,10 @@ export default function SpendPage() {
     const end = endOfMonthFromStart(month);
     const from = filters.from || month;
     const to = filters.to || end;
-  const hasNonEmpty = !!(filters.categoryId || filters.bank || filters.tag);
+    const hasNonEmpty = !!(filters.categoryId || filters.bankAccountId || filters.tag);
     const isDefaultRange = from === month && to === end;
     return hasNonEmpty || !isDefaultRange;
-  }, [filters.categoryId, filters.bank, filters.tag, filters.from, filters.to, month]);
+  }, [filters.categoryId, filters.bankAccountId, filters.tag, filters.from, filters.to, month]);
 
   // Handlers: create
   async function handleCreate(e: React.FormEvent) {
@@ -159,7 +162,8 @@ export default function SpendPage() {
         date: form.date,
         categoryId: form.categoryId || null,
         amount: parseFloat(form.amount || "0"),
-        bank_account: form.bank_account || null,
+        bank_account_id: form.bank_account_id || null,
+        bank_account: form.bank_account_id ? (bankAccounts.find(b => b.id === form.bank_account_id)?.name ?? null) : null,
         tags: form.tags ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : null,
         notes: form.notes || null,
       });
@@ -187,12 +191,15 @@ export default function SpendPage() {
     try {
       setSaving(true);
       const changes: any = {};
-  const fields: (keyof Transaction)[] = ["date", "category", "category_id", "amount", "bank_account", "notes", "tags"];
+      const fields: (keyof Transaction)[] = ["date", "category", "category_id", "bank_account_id", "bank_account", "amount", "notes", "tags"];
       for (const k of fields) {
         if (k in editDraft) changes[k] = (editDraft as any)[k];
       }
       if (typeof changes.amount === "string") changes.amount = parseFloat(changes.amount);
       if (typeof changes.tags === "string") changes.tags = (changes.tags as string).split(",").map((t: string) => t.trim()).filter(Boolean);
+      if ("bank_account_id" in changes) {
+        changes.bank_account = changes.bank_account_id ? (bankAccounts.find(b => b.id === changes.bank_account_id)?.name ?? null) : null;
+      }
       await DataApi.updateTransaction(editingId, changes);
       setEditingId(null);
       setEditDraft({});
@@ -273,11 +280,11 @@ export default function SpendPage() {
       <section className="border rounded p-4">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
           <div>
-      <label className="block text-xs text-gray-500">Category</label>
-      <select className="border rounded px-2 py-1 w-full" value={filters.categoryId} onChange={(e) => setFilters({ ...filters, categoryId: e.target.value })}>
+            <label className="block text-xs text-gray-500">Category</label>
+            <select className="border rounded px-2 py-1 w-full" value={filters.categoryId} onChange={(e) => setFilters({ ...filters, categoryId: e.target.value })}>
               <option value="">All</option>
               {categories.map((c) => (
-        <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
@@ -291,7 +298,12 @@ export default function SpendPage() {
           </div>
           <div>
             <label className="block text-xs text-gray-500">Bank Account</label>
-            <input className="border rounded px-2 py-1 w-full" value={filters.bank} onChange={(e) => setFilters({ ...filters, bank: e.target.value })} />
+            <select className="border rounded px-2 py-1 w-full" value={filters.bankAccountId} onChange={(e) => setFilters({ ...filters, bankAccountId: e.target.value })}>
+              <option value="">All</option>
+              {bankAccounts.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-xs text-gray-500">Tag</label>
@@ -300,7 +312,7 @@ export default function SpendPage() {
         </div>
         <div className="mt-3 flex gap-2">
           <button className="px-3 py-1 rounded border" onClick={() => { setPage(1); reload(); }}>Apply</button>
-          <button className="px-3 py-1 rounded border" onClick={() => { setFilters({ categoryId: "", from: month, to: endOfMonthFromStart(month), bank: "", tag: "" }); setPage(1); reload(); }}>Reset</button>
+          <button className="px-3 py-1 rounded border" onClick={() => { setFilters({ categoryId: "", from: month, to: endOfMonthFromStart(month), bankAccountId: "", tag: "" }); setPage(1); reload(); }}>Reset</button>
         </div>
       </section>
 
@@ -311,11 +323,11 @@ export default function SpendPage() {
             <input type="date" className="border rounded px-2 py-1 w-full" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
           </div>
           <div>
-      <label className="block text-xs text-gray-500">Category</label>
-      <select className="border rounded px-2 py-1 w-full" value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
+            <label className="block text-xs text-gray-500">Category</label>
+            <select className="border rounded px-2 py-1 w-full" value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}>
               <option value="">— Select —</option>
               {categories.map((c) => (
-        <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
@@ -325,7 +337,12 @@ export default function SpendPage() {
           </div>
           <div>
             <label className="block text-xs text-gray-500">Bank Account</label>
-            <input type="text" className="border rounded px-2 py-1 w-full" value={form.bank_account} onChange={(e) => setForm({ ...form, bank_account: e.target.value })} />
+            <select className="border rounded px-2 py-1 w-full" value={form.bank_account_id} onChange={(e) => setForm({ ...form, bank_account_id: e.target.value })}>
+              <option value="">— Select —</option>
+              {bankAccounts.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-xs text-gray-500">Tags (comma-separated)</label>
@@ -407,7 +424,12 @@ export default function SpendPage() {
                     </td>
                     <td className="py-2">
                       {editingId === t.id ? (
-                        <input type="text" className="border rounded px-2 py-1" value={(editDraft.bank_account as any) ?? t.bank_account ?? ""} onChange={(e) => setEditDraft({ ...editDraft, bank_account: e.target.value })} />
+                        <select className="border rounded px-2 py-1" value={(editDraft as any).bank_account_id ?? (t as any).bank_account_id ?? ""} onChange={(e) => setEditDraft({ ...editDraft, bank_account_id: e.target.value })}>
+                          <option value="">— Select —</option>
+                          {bankAccounts.map((b) => (
+                            <option key={b.id} value={b.id}>{b.name}</option>
+                          ))}
+                        </select>
                       ) : (
                         t.bank_account || "—"
                       )}
