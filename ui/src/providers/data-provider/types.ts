@@ -97,3 +97,13 @@ export interface BankAccount {
   updated_at: string;
   in_use_count?: number; // populated from bank_accounts_with_usage
 }
+
+export interface Tag {
+  id: string;
+  user_id: string;
+  name: string;
+  description?: string | null;
+  created_at: string;
+  updated_at: string;
+  in_use_count?: number; // populated from tags_with_usage
+}

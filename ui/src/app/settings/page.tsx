@@ -15,7 +15,11 @@ export default function SettingsPage() {
               Categories
             </Link>
           </li>
-          <li className="text-gray-500">Tags (coming soon)</li>
+          <li>
+            <Link href="/settings/tags" className="text-blue-600 hover:underline">
+              Tags
+            </Link>
+          </li>
           <li>
             <Link href="/settings/bank-accounts" className="text-blue-600 hover:underline">
               Bank Accounts

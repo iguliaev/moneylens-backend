@@ -12,6 +12,7 @@ import type {
   TransactionType,
   Category,
   BankAccount,
+  Tag,
 } from "./types";
 
 // Helper to order by when needed
@@ -78,6 +79,43 @@ export const DataApi = {
     const { data, error } = await db.from("categories").insert(payload).select("*").single();
     if (error) throw error;
     return data as Category;
+  },
+
+  // Tags CRUD
+  async listTags(): Promise<Tag[]> {
+    const { data, error } = await db
+      .from("tags_with_usage")
+      .select("id,user_id,name,description,created_at,updated_at,in_use_count")
+      .order("name", { ascending: true });
+    if (error) throw error;
+    return (data as any[]) as Tag[];
+  },
+
+  async createTag(input: { name: string; description?: string | null }): Promise<Tag> {
+    const payload = { name: input.name, description: input.description ?? null };
+    const { data, error } = await db.from("tags").insert(payload).select("*").single();
+    if (error) throw error;
+    return data as Tag;
+  },
+
+  async updateTag(id: string, input: Partial<{ name: string; description: string | null }>): Promise<Tag> {
+    const { data, error } = await db
+      .from("tags")
+      .update({ ...input })
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return data as Tag;
+  },
+
+  async deleteTag(id: string): Promise<void> {
+    const { data, error } = await db.rpc("delete_tag_safe", { p_tag_id: id });
+    if (error) throw error;
+    const row = (Array.isArray(data) ? data[0] : data) as { ok: boolean; in_use_count: number } | null;
+    if (row && row.ok === false) {
+      throw new Error(`Tag is in use by ${row.in_use_count} transaction(s)`);
+    }
   },
 
   async updateCategory(id: string, input: Partial<{ name: string; description: string | null }>): Promise<Category> {
