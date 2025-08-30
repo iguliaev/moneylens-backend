@@ -8,6 +8,15 @@ select plan(8);
 select tests.create_supabase_user('user1@test.com');
 select tests.create_supabase_user('user2@test.com');
 
+-- Seed tags needed by tests
+insert into public.tags (user_id, name)
+values
+    (tests.get_supabase_uid('user1@test.com'), 'test'),
+    (tests.get_supabase_uid('user1@test.com'), 'groceries'),
+    (tests.get_supabase_uid('user1@test.com'), 'stocks'),
+    (tests.get_supabase_uid('user2@test.com'), 'salary'),
+    (tests.get_supabase_uid('user2@test.com'), 'groceries');
+
 -- Create test transactions
 insert into transactions (id, user_id, date, type, category, amount, tags, notes, bank_account) values
     (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), current_date, 'spend', 'test', 100.00, array['test'], 'Test transaction', 'Test Bank'),
@@ -37,8 +46,8 @@ select lives_ok(
 
 -- Test 3: User 1 cannot insert a transaction for another user
 select throws_ok(
-    $$insert into transactions (id, user_id, date, type, category, amount, tags, notes, bank_account)
-      values (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), current_date, 'spend', 'groceries', 50.00, array['groceries'], 'grocery shopping', 'test bank')$$,
+        $$insert into transactions (id, user_id, date, type, category, amount, tags, notes, bank_account)
+            values (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), current_date, 'spend', 'groceries', 50.00, null, 'grocery shopping', 'test bank')$$,
     '42501',
     'new row violates row-level security policy for table "transactions"',
     'User 1 should not be able to insert a transaction for another user'
@@ -81,8 +90,8 @@ select lives_ok(
 
 -- Test 8: User 2 cannot set user_id to another user on insert
 select throws_ok(
-    $$insert into transactions (id, user_id, date, type, category, amount, tags, notes, bank_account)
-      values (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), current_date, 'spend', 'groceries', 50.00, array['groceries'], 'grocery shopping', 'test bank')$$,
+        $$insert into transactions (id, user_id, date, type, category, amount, tags, notes, bank_account)
+            values (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), current_date, 'spend', 'groceries', 50.00, null, 'grocery shopping', 'test bank')$$,
     '42501',
     'new row violates row-level security policy for table "transactions"',
     'User 2 should not be able to set user_id to another user on insert'

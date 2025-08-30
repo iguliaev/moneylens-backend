@@ -8,6 +8,15 @@ select plan(9);
 select tests.create_supabase_user('u1@test.com');
 select tests.create_supabase_user('u2@test.com');
 
+-- Seed required tags per user for enforce_known_tags
+insert into public.tags (user_id, name)
+values
+  (tests.get_supabase_uid('u1@test.com'), 'groceries'),
+  (tests.get_supabase_uid('u1@test.com'), 'fun'),
+  (tests.get_supabase_uid('u1@test.com'), 'salary'),
+  (tests.get_supabase_uid('u1@test.com'), 'misc'),
+  (tests.get_supabase_uid('u2@test.com'), 'groceries');
+
 -- Create categories for users
 insert into categories (user_id, type, name)
 values

@@ -41,7 +41,7 @@ begin
   from unnest(new.tags) as t(tag)
   where not exists (
     select 1 from public.tags g
-    where g.user_id = new.user_id and g.name = t.tag
+    where g.user_id = coalesce(auth.uid(), new.user_id) and g.name = t.tag
   )
   limit 1;
 

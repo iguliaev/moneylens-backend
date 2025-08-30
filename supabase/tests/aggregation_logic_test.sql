@@ -9,6 +9,15 @@ select tests.create_supabase_user('user1@test.com');
 select tests.create_supabase_user('user2@test.com');
 
 
+-- Seed required tags for each user to satisfy enforce_known_tags trigger
+insert into public.tags (user_id, name)
+values
+  (tests.get_supabase_uid('user1@test.com'), 'groceries'),
+  (tests.get_supabase_uid('user1@test.com'), 'salary'),
+  (tests.get_supabase_uid('user2@test.com'), 'groceries'),
+  (tests.get_supabase_uid('user2@test.com'), 'salary');
+
+
 -- Insert test categories for each user and type, and use CTEs to reference their IDs
 WITH
   cat_food_user1 AS (
