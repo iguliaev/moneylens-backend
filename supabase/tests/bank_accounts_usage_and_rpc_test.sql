@@ -23,9 +23,9 @@ with ids as (
 insert into public.transactions (user_id, date, type, amount, bank_account_id)
 select uid, current_date, 'spend', 10, card_id from ids;
 
--- 1) Usage view shows counts: Card=1, Checking=0
+-- 1) Usage view shows counts: Card=1, Checking=0 (scoped to current user)
 select results_eq(
-  $$ select name, in_use_count from public.bank_accounts_with_usage order by name $$,
+  $$ select name, in_use_count from public.bank_accounts_with_usage where user_id = auth.uid() order by name $$,
   $$ values ('Card', 1::bigint), ('Checking', 0::bigint) $$,
   'Usage view counts match'
 );
