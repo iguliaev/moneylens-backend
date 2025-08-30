@@ -1,7 +1,8 @@
 "use client";
 
 import { DataApi } from "@providers/data-provider/api";
-import type { MonthlyTotalsRow, Transaction, Category, BankAccount } from "@providers/data-provider/types";
+import type { MonthlyTotalsRow, Transaction, Category, BankAccount, Tag } from "@providers/data-provider/types";
+import TagsMultiSelect from "@components/tags/multi-select";
 import { useEffect, useMemo, useState } from "react";
 
 function fmtCurrency(n: number) {
@@ -33,6 +34,7 @@ export default function SpendPage() {
   const [pageSize] = useState(20);
   const [categories, setCategories] = useState<Category[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [allTags, setAllTags] = useState<Tag[]>([]);
 
   // Filters
   const [filters, setFilters] = useState<{ categoryId: string; from: string; to: string; bankAccountId: string; tag: string }>(() => {
@@ -42,12 +44,12 @@ export default function SpendPage() {
   });
 
   // Create form state
-  const [form, setForm] = useState<{ date: string; categoryId: string; amount: string; bank_account_id: string; tags: string; notes: string }>({
+  const [form, setForm] = useState<{ date: string; categoryId: string; amount: string; bank_account_id: string; tags: string[]; notes: string }>({
     date: new Date().toISOString().slice(0, 10),
     categoryId: "",
     amount: "",
     bank_account_id: "",
-    tags: "",
+    tags: [],
     notes: "",
   });
   const [saving, setSaving] = useState(false);
@@ -114,13 +116,15 @@ export default function SpendPage() {
       try {
         setLoading(true);
         setError(null);
-        const [cats, bas] = await Promise.all([
+        const [cats, bas, tags] = await Promise.all([
           DataApi.listCategories("spend"),
           DataApi.listBankAccounts(),
+          DataApi.listTags(),
         ]);
         if (!mounted) return;
         setCategories(cats);
         setBankAccounts(bas);
+        setAllTags(tags);
         await reload();
       } catch (e: any) {
         if (!mounted) return;
@@ -164,7 +168,7 @@ export default function SpendPage() {
         amount: parseFloat(form.amount || "0"),
         bank_account_id: form.bank_account_id || null,
         bank_account: form.bank_account_id ? (bankAccounts.find(b => b.id === form.bank_account_id)?.name ?? null) : null,
-        tags: form.tags ? form.tags.split(",").map((t) => t.trim()).filter(Boolean) : null,
+        tags: form.tags.length ? form.tags : null,
         notes: form.notes || null,
       });
       // Reset and reload
@@ -180,7 +184,7 @@ export default function SpendPage() {
   // Handlers: edit row
   function startEdit(row: Transaction) {
     setEditingId(row.id);
-    setEditDraft({ ...row });
+  setEditDraft({ ...row });
   }
   function cancelEdit() {
     setEditingId(null);
@@ -196,7 +200,10 @@ export default function SpendPage() {
         if (k in editDraft) changes[k] = (editDraft as any)[k];
       }
       if (typeof changes.amount === "string") changes.amount = parseFloat(changes.amount);
-      if (typeof changes.tags === "string") changes.tags = (changes.tags as string).split(",").map((t: string) => t.trim()).filter(Boolean);
+      // ensure tags is string[]
+      if (typeof changes.tags === "string") {
+        changes.tags = (changes.tags as string).split(",").map((t: string) => t.trim()).filter(Boolean);
+      }
       if ("bank_account_id" in changes) {
         changes.bank_account = changes.bank_account_id ? (bankAccounts.find(b => b.id === changes.bank_account_id)?.name ?? null) : null;
       }
@@ -307,7 +314,12 @@ export default function SpendPage() {
           </div>
           <div>
             <label className="block text-xs text-gray-500">Tag</label>
-            <input className="border rounded px-2 py-1 w-full" value={filters.tag} onChange={(e) => setFilters({ ...filters, tag: e.target.value })} />
+            <select className="border rounded px-2 py-1 w-full" value={filters.tag} onChange={(e) => setFilters({ ...filters, tag: e.target.value })}>
+              <option value="">All</option>
+              {allTags.map((t) => (
+                <option key={t.id} value={t.name}>{t.name}</option>
+              ))}
+            </select>
           </div>
         </div>
         <div className="mt-3 flex gap-2">
@@ -345,8 +357,13 @@ export default function SpendPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-500">Tags (comma-separated)</label>
-            <input type="text" className="border rounded px-2 py-1 w-full" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} />
+            <label className="block text-xs text-gray-500">Tags</label>
+            <TagsMultiSelect
+              options={allTags.map((t) => t.name)}
+              value={form.tags}
+              onChange={(vals) => setForm({ ...form, tags: vals })}
+              placeholder="Select tags"
+            />
           </div>
           <div>
             <label className="block text-xs text-gray-500">Notes</label>
@@ -436,8 +453,12 @@ export default function SpendPage() {
                     </td>
                     <td className="py-2">
                       {editingId === t.id ? (
-                        <input type="text" className="border rounded px-2 py-1" value={(typeof editDraft.tags === 'string' ? (editDraft.tags as any) : (editDraft.tags as any)?.join(', ')) ?? (t.tags?.join(', ') ?? '')} onChange={(e) => setEditDraft({ ...editDraft, tags: e.target.value })} />
-                      ) : (
+                          <TagsMultiSelect
+                            options={allTags.map((tg) => tg.name)}
+                            value={Array.isArray(editDraft.tags) ? (editDraft.tags as string[]) : (t.tags ?? [])}
+                            onChange={(vals) => setEditDraft({ ...editDraft, tags: vals })}
+                          />
+                        ) : (
                         t.tags?.join(', ') || "—"
                       )}
                     </td>
