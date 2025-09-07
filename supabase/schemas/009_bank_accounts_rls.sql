@@ -7,26 +7,26 @@ drop policy if exists bank_accounts_select on public.bank_accounts;
 create policy bank_accounts_select
 on public.bank_accounts
 for select
-using (user_id = auth.uid());
+using (user_id = (select auth.uid()));
 
 drop policy if exists bank_accounts_insert on public.bank_accounts;
 create policy bank_accounts_insert
 on public.bank_accounts
 for insert
-with check (user_id = auth.uid());
+with check (user_id = (select auth.uid()));
 
 drop policy if exists bank_accounts_update on public.bank_accounts;
 create policy bank_accounts_update
 on public.bank_accounts
 for update
-using (user_id = auth.uid())
-with check (user_id = auth.uid());
+using (user_id = (select auth.uid()))
+with check (user_id = (select auth.uid()));
 
 drop policy if exists bank_accounts_delete on public.bank_accounts;
 create policy bank_accounts_delete
 on public.bank_accounts
 for delete
-using (user_id = auth.uid());
+using (user_id = (select auth.uid()));
 
 -- Auto-assign user_id
 create or replace function public.bank_accounts_set_user_id()

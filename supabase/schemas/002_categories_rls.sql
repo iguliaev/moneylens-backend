@@ -17,26 +17,26 @@ DROP POLICY IF EXISTS categories_select ON public.categories;
 CREATE POLICY categories_select
 ON public.categories
 FOR SELECT
-USING (user_id = auth.uid());
+USING (user_id = (select auth.uid()));
 
 DROP POLICY IF EXISTS categories_insert ON public.categories;
 CREATE POLICY categories_insert
 ON public.categories
 FOR INSERT
-WITH CHECK (user_id = auth.uid());
+WITH CHECK (user_id = (select auth.uid()));
 
 DROP POLICY IF EXISTS categories_update ON public.categories;
 CREATE POLICY categories_update
 ON public.categories
 FOR UPDATE
-USING (user_id = auth.uid())
-WITH CHECK (user_id = auth.uid());
+USING (user_id = (select auth.uid()))
+WITH CHECK (user_id = (select auth.uid()));
 
 DROP POLICY IF EXISTS categories_delete ON public.categories;
 CREATE POLICY categories_delete
 ON public.categories
 FOR DELETE
-USING (user_id = auth.uid());
+USING (user_id = (select auth.uid()));
 
 -- Auto-assign user_id from auth.uid() on INSERT so clients don't send it
 CREATE OR REPLACE FUNCTION public.categories_set_user_id()

@@ -8,26 +8,26 @@ drop policy if exists tags_select on public.tags;
 create policy tags_select
 on public.tags
 for select
-using (user_id = auth.uid());
+using (user_id = (select auth.uid()));
 
 drop policy if exists tags_insert on public.tags;
 create policy tags_insert
 on public.tags
 for insert
-with check (user_id = auth.uid());
+with check (user_id = (select auth.uid()));
 
 drop policy if exists tags_update on public.tags;
 create policy tags_update
 on public.tags
 for update
-using (user_id = auth.uid())
-with check (user_id = auth.uid());
+using (user_id = (select auth.uid()))
+with check (user_id = (select auth.uid()));
 
 drop policy if exists tags_delete on public.tags;
 create policy tags_delete
 on public.tags
 for delete
-using (user_id = auth.uid());
+using (user_id = (select auth.uid()));
 
 -- Set user_id automatically if missing
 create or replace function public.tags_set_user_id()

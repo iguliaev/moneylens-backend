@@ -713,7 +713,7 @@ grant update on table "public"."transactions" to "service_role";
   as permissive
   for delete
   to public
-using ((user_id = auth.uid()));
+using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 
@@ -722,7 +722,7 @@ using ((user_id = auth.uid()));
   as permissive
   for insert
   to public
-with check ((user_id = auth.uid()));
+with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 
@@ -731,7 +731,7 @@ with check ((user_id = auth.uid()));
   as permissive
   for select
   to public
-using ((user_id = auth.uid()));
+using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 
@@ -740,8 +740,8 @@ using ((user_id = auth.uid()));
   as permissive
   for update
   to public
-using ((user_id = auth.uid()))
-with check ((user_id = auth.uid()));
+using ((user_id = ( SELECT auth.uid() AS uid)))
+with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 
@@ -750,7 +750,7 @@ with check ((user_id = auth.uid()));
   as permissive
   for delete
   to public
-using ((user_id = auth.uid()));
+using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 
@@ -759,7 +759,7 @@ using ((user_id = auth.uid()));
   as permissive
   for insert
   to public
-with check ((user_id = auth.uid()));
+with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 
@@ -768,7 +768,7 @@ with check ((user_id = auth.uid()));
   as permissive
   for select
   to public
-using ((user_id = auth.uid()));
+using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 
@@ -777,8 +777,8 @@ using ((user_id = auth.uid()));
   as permissive
   for update
   to public
-using ((user_id = auth.uid()))
-with check ((user_id = auth.uid()));
+using ((user_id = ( SELECT auth.uid() AS uid)))
+with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 
@@ -787,7 +787,7 @@ with check ((user_id = auth.uid()));
   as permissive
   for delete
   to public
-using ((user_id = auth.uid()));
+using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 
@@ -796,7 +796,7 @@ using ((user_id = auth.uid()));
   as permissive
   for insert
   to public
-with check ((user_id = auth.uid()));
+with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 
@@ -805,7 +805,7 @@ with check ((user_id = auth.uid()));
   as permissive
   for select
   to public
-using ((user_id = auth.uid()));
+using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 
@@ -814,8 +814,8 @@ using ((user_id = auth.uid()));
   as permissive
   for update
   to public
-using ((user_id = auth.uid()))
-with check ((user_id = auth.uid()));
+using ((user_id = ( SELECT auth.uid() AS uid)))
+with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
 
@@ -824,7 +824,7 @@ with check ((user_id = auth.uid()));
   as permissive
   for delete
   to public
-using ((auth.uid() = user_id));
+using ((( SELECT auth.uid() AS uid) = user_id));
 
 
 
@@ -833,7 +833,7 @@ using ((auth.uid() = user_id));
   as permissive
   for insert
   to public
-with check ((auth.uid() = user_id));
+with check ((( SELECT auth.uid() AS uid) = user_id));
 
 
 
@@ -842,7 +842,7 @@ with check ((auth.uid() = user_id));
   as permissive
   for update
   to public
-using ((auth.uid() = user_id));
+using ((( SELECT auth.uid() AS uid) = user_id));
 
 
 
@@ -851,7 +851,7 @@ using ((auth.uid() = user_id));
   as permissive
   for select
   to public
-using ((auth.uid() = user_id));
+using ((( SELECT auth.uid() AS uid) = user_id));
 
 
 CREATE TRIGGER set_updated_at_on_bank_accounts BEFORE UPDATE ON public.bank_accounts FOR EACH ROW EXECUTE FUNCTION tg_set_updated_at();
