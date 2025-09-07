@@ -40,14 +40,18 @@ USING (user_id = auth.uid());
 
 -- Auto-assign user_id from auth.uid() on INSERT so clients don't send it
 CREATE OR REPLACE FUNCTION public.categories_set_user_id()
-RETURNS trigger AS $$
+RETURNS trigger
+LANGUAGE plpgsql
+-- Harden search_path (Option: empty) so only fully-qualified names resolve.
+SET search_path = ''
+AS $$
 BEGIN
     IF NEW.user_id IS NULL THEN
         NEW.user_id := auth.uid();
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 DROP TRIGGER IF EXISTS set_user_id_on_categories ON public.categories;
 CREATE TRIGGER set_user_id_on_categories
@@ -56,13 +60,16 @@ FOR EACH ROW EXECUTE FUNCTION public.categories_set_user_id();
 
 -- Keep updated_at fresh on UPDATE
 CREATE OR REPLACE FUNCTION public.tg_set_updated_at()
-RETURNS trigger AS $$
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
 BEGIN
     -- clock_timestamp() returns the actual wall-clock time, not the transaction start time
     NEW.updated_at := clock_timestamp();
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 DROP TRIGGER IF EXISTS set_updated_at_on_categories ON public.categories;
 CREATE TRIGGER set_updated_at_on_categories

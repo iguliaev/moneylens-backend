@@ -11,6 +11,7 @@ create or replace function public.sum_transactions_amount(
 ) returns numeric
 language sql
 stable
+set search_path = ''
 as $$
   select coalesce(sum(t.amount), 0)::numeric
   from public.transactions t
@@ -28,7 +29,11 @@ grant execute on function public.sum_transactions_amount(date, date, public.tran
 
 -- Enforce that all tags used on a transaction exist in the user's tags dictionary
 create or replace function public.enforce_known_tags()
-returns trigger language plpgsql as $$
+returns trigger
+language plpgsql
+-- Harden search_path: restrict to ""; table refs are schema-qualified.
+set search_path = ''
+as $$
 declare
   missing text;
 begin

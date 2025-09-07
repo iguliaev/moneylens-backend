@@ -27,7 +27,7 @@ create or replace function public.delete_tag_safe(p_tag_id uuid)
 returns table(ok boolean, in_use_count bigint)
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 declare
   v_uid uuid := auth.uid();

@@ -5,7 +5,11 @@ alter table if exists public.transactions
   add column if not exists bank_account_id uuid references public.bank_accounts(id);
 
 create or replace function public.check_transaction_bank_account()
-returns trigger as $$
+returns trigger
+language plpgsql
+-- Harden search_path: empty string; all references are schema-qualified or local NEW.*
+set search_path = ''
+as $$
 begin
   if new.bank_account_id is not null then
     if not exists (
@@ -17,7 +21,7 @@ begin
   end if;
   return new;
 end;
-$$ language plpgsql;
+$$;
 
 drop trigger if exists transaction_bank_account_check on public.transactions;
 create trigger transaction_bank_account_check

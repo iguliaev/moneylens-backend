@@ -25,7 +25,7 @@ comment on view public.bank_accounts_with_usage is 'Per-user bank accounts with 
 create or replace function public.delete_bank_account_safe(p_bank_account_id uuid)
 returns table(ok boolean, in_use_count bigint)
  language plpgsql
- set search_path = public
+ set search_path = ''
 as $$
 declare
   v_uid uuid;

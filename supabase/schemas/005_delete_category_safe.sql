@@ -6,7 +6,8 @@ create or replace function public.delete_category_safe(p_category_id uuid)
 returns table(ok boolean, in_use_count bigint)
 language plpgsql
 security definer
-set search_path = public
+-- Harden search_path: only pg_catalog (all object references are schema-qualified)
+set search_path = ''
 as $$
 declare
   v_uid uuid;

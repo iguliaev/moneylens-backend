@@ -31,7 +31,10 @@ using (user_id = auth.uid());
 
 -- Set user_id automatically if missing
 create or replace function public.tags_set_user_id()
-returns trigger language plpgsql as $$
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
 begin
   if new.user_id is null then
     new.user_id := auth.uid();

@@ -30,14 +30,18 @@ using (user_id = auth.uid());
 
 -- Auto-assign user_id
 create or replace function public.bank_accounts_set_user_id()
-returns trigger as $$
+returns trigger
+language plpgsql
+-- Harden search_path (Option 2: empty) so only fully-qualified names resolve.
+set search_path = ''
+as $$
 begin
   if new.user_id is null then
-    new.user_id := auth.uid();
+    new.user_id := auth.uid(); -- schema-qualified call is safe with empty path
   end if;
   return new;
 end;
-$$ language plpgsql;
+$$;
 
 drop trigger if exists set_user_id_on_bank_accounts on public.bank_accounts;
 create trigger set_user_id_on_bank_accounts

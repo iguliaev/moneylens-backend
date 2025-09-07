@@ -127,10 +127,11 @@ set check_function_bodies = off;
 CREATE OR REPLACE FUNCTION public.bank_accounts_set_user_id()
  RETURNS trigger
  LANGUAGE plpgsql
+ SET search_path TO ''
 AS $function$
 begin
   if new.user_id is null then
-    new.user_id := auth.uid();
+    new.user_id := auth.uid(); -- schema-qualified call is safe with empty path
   end if;
   return new;
 end;
@@ -156,6 +157,7 @@ create or replace view "public"."bank_accounts_with_usage" as  SELECT b.id,
 CREATE OR REPLACE FUNCTION public.categories_set_user_id()
  RETURNS trigger
  LANGUAGE plpgsql
+ SET search_path TO ''
 AS $function$
 BEGIN
     IF NEW.user_id IS NULL THEN
@@ -186,6 +188,7 @@ create or replace view "public"."categories_with_usage" as  SELECT c.id,
 CREATE OR REPLACE FUNCTION public.check_transaction_bank_account()
  RETURNS trigger
  LANGUAGE plpgsql
+ SET search_path TO ''
 AS $function$
 begin
   if new.bank_account_id is not null then
@@ -204,11 +207,12 @@ $function$
 CREATE OR REPLACE FUNCTION public.check_transaction_category_type()
  RETURNS trigger
  LANGUAGE plpgsql
+ SET search_path TO ''
 AS $function$
 BEGIN
   IF NEW.category_id IS NOT NULL THEN
-    IF NEW.type IS DISTINCT FROM (SELECT type FROM categories WHERE id = NEW.category_id) THEN
-      RAISE EXCEPTION 'Transaction type (%) does not match category type (%)', NEW.type, (SELECT type FROM categories WHERE id = NEW.category_id);
+    IF NEW.type IS DISTINCT FROM (SELECT type FROM public.categories WHERE id = NEW.category_id) THEN
+      RAISE EXCEPTION 'Transaction type (%) does not match category type (%)', NEW.type, (SELECT type FROM public.categories WHERE id = NEW.category_id);
     END IF;
   END IF;
   RETURN NEW;
@@ -219,7 +223,7 @@ $function$
 CREATE OR REPLACE FUNCTION public.delete_bank_account_safe(p_bank_account_id uuid)
  RETURNS TABLE(ok boolean, in_use_count bigint)
  LANGUAGE plpgsql
- SET search_path TO 'public'
+ SET search_path TO ''
 AS $function$
 declare
   v_uid uuid;
@@ -257,7 +261,7 @@ CREATE OR REPLACE FUNCTION public.delete_category_safe(p_category_id uuid)
  RETURNS TABLE(ok boolean, in_use_count bigint)
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO ''
 AS $function$
 declare
   v_uid uuid;
@@ -298,11 +302,12 @@ CREATE OR REPLACE FUNCTION public.delete_tag_safe(p_tag_id uuid)
  RETURNS TABLE(ok boolean, in_use_count bigint)
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public'
+ SET search_path TO ''
 AS $function$
 declare
   v_uid uuid := auth.uid();
   v_name text;
+  v_in_use_count bigint;
 begin
   if v_uid is null then
     raise exception 'Not authenticated' using errcode = '28000';
@@ -316,17 +321,17 @@ begin
     raise exception 'Tag not found' using errcode = 'P0002';
   end if;
 
-  select count(*)::bigint into in_use_count
+  select count(*)::bigint into v_in_use_count
   from public.transactions tr
   where tr.user_id = v_uid
     and array_position(tr.tags, v_name) is not null;
 
-  if in_use_count > 0 then
-    ok := false; return;
+  if v_in_use_count > 0 then
+    return query select false as ok, v_in_use_count as in_use_count;
   end if;
 
   delete from public.tags where id = p_tag_id and user_id = v_uid;
-  ok := found; in_use_count := 0; return;
+  return query select true as ok, 0::bigint as in_use_count;
 end;
 $function$
 ;
@@ -334,6 +339,7 @@ $function$
 CREATE OR REPLACE FUNCTION public.enforce_known_tags()
  RETURNS trigger
  LANGUAGE plpgsql
+ SET search_path TO ''
 AS $function$
 declare
   missing text;
@@ -347,7 +353,7 @@ begin
   from unnest(new.tags) as t(tag)
   where not exists (
     select 1 from public.tags g
-    where g.user_id = new.user_id and g.name = t.tag
+    where g.user_id = coalesce(auth.uid(), new.user_id) and g.name = t.tag
   )
   limit 1;
 
@@ -363,6 +369,7 @@ CREATE OR REPLACE FUNCTION public.sum_transactions_amount(p_from date DEFAULT NU
  RETURNS numeric
  LANGUAGE sql
  STABLE
+ SET search_path TO ''
 AS $function$
   select coalesce(sum(t.amount), 0)::numeric
   from public.transactions t
@@ -379,6 +386,7 @@ $function$
 CREATE OR REPLACE FUNCTION public.tags_set_user_id()
  RETURNS trigger
  LANGUAGE plpgsql
+ SET search_path TO ''
 AS $function$
 begin
   if new.user_id is null then
@@ -407,6 +415,7 @@ create or replace view "public"."tags_with_usage" as  SELECT g.id,
 CREATE OR REPLACE FUNCTION public.tg_set_updated_at()
  RETURNS trigger
  LANGUAGE plpgsql
+ SET search_path TO ''
 AS $function$
 BEGIN
     -- clock_timestamp() returns the actual wall-clock time, not the transaction start time
