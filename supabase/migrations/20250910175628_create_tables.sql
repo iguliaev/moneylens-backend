@@ -1,20 +1,18 @@
 create type "public"."transaction_type" as enum ('earn', 'spend', 'save');
 
-
-  create table "public"."bank_accounts" (
+create table "public"."bank_accounts" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid not null,
     "name" text not null,
     "description" text,
     "created_at" timestamp with time zone not null default now(),
     "updated_at" timestamp with time zone not null default now()
-      );
+);
 
 
 alter table "public"."bank_accounts" enable row level security;
 
-
-  create table "public"."categories" (
+create table "public"."categories" (
     "id" uuid not null default gen_random_uuid(),
     "user_id" uuid not null,
     "type" transaction_type not null,
@@ -22,27 +20,25 @@ alter table "public"."bank_accounts" enable row level security;
     "description" text,
     "created_at" timestamp with time zone default now(),
     "updated_at" timestamp with time zone default now()
-      );
+);
 
 
 alter table "public"."categories" enable row level security;
 
-
-  create table "public"."tags" (
-    "id" uuid not null default uuid_generate_v4(),
+create table "public"."tags" (
+    "id" uuid not null default gen_random_uuid(),
     "user_id" uuid not null,
     "name" text not null,
     "description" text,
     "created_at" timestamp with time zone not null default now(),
     "updated_at" timestamp with time zone not null default now()
-      );
+);
 
 
 alter table "public"."tags" enable row level security;
 
-
-  create table "public"."transactions" (
-    "id" uuid not null default uuid_generate_v4(),
+create table "public"."transactions" (
+    "id" uuid not null default gen_random_uuid(),
     "user_id" uuid,
     "date" date not null,
     "type" transaction_type not null,
@@ -55,7 +51,7 @@ alter table "public"."tags" enable row level security;
     "created_at" timestamp with time zone not null default now(),
     "updated_at" timestamp with time zone not null default now(),
     "bank_account_id" uuid
-      );
+);
 
 
 alter table "public"."transactions" enable row level security;
@@ -707,150 +703,134 @@ grant truncate on table "public"."transactions" to "service_role";
 
 grant update on table "public"."transactions" to "service_role";
 
-
-  create policy "bank_accounts_delete"
-  on "public"."bank_accounts"
-  as permissive
-  for delete
-  to public
+create policy "bank_accounts_delete"
+on "public"."bank_accounts"
+as permissive
+for delete
+to public
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-
-  create policy "bank_accounts_insert"
-  on "public"."bank_accounts"
-  as permissive
-  for insert
-  to public
+create policy "bank_accounts_insert"
+on "public"."bank_accounts"
+as permissive
+for insert
+to public
 with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-
-  create policy "bank_accounts_select"
-  on "public"."bank_accounts"
-  as permissive
-  for select
-  to public
+create policy "bank_accounts_select"
+on "public"."bank_accounts"
+as permissive
+for select
+to public
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-
-  create policy "bank_accounts_update"
-  on "public"."bank_accounts"
-  as permissive
-  for update
-  to public
+create policy "bank_accounts_update"
+on "public"."bank_accounts"
+as permissive
+for update
+to public
 using ((user_id = ( SELECT auth.uid() AS uid)))
 with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-
-  create policy "categories_delete"
-  on "public"."categories"
-  as permissive
-  for delete
-  to public
+create policy "categories_delete"
+on "public"."categories"
+as permissive
+for delete
+to public
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-
-  create policy "categories_insert"
-  on "public"."categories"
-  as permissive
-  for insert
-  to public
+create policy "categories_insert"
+on "public"."categories"
+as permissive
+for insert
+to public
 with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-
-  create policy "categories_select"
-  on "public"."categories"
-  as permissive
-  for select
-  to public
+create policy "categories_select"
+on "public"."categories"
+as permissive
+for select
+to public
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-
-  create policy "categories_update"
-  on "public"."categories"
-  as permissive
-  for update
-  to public
+create policy "categories_update"
+on "public"."categories"
+as permissive
+for update
+to public
 using ((user_id = ( SELECT auth.uid() AS uid)))
 with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-
-  create policy "tags_delete"
-  on "public"."tags"
-  as permissive
-  for delete
-  to public
+create policy "tags_delete"
+on "public"."tags"
+as permissive
+for delete
+to public
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-
-  create policy "tags_insert"
-  on "public"."tags"
-  as permissive
-  for insert
-  to public
+create policy "tags_insert"
+on "public"."tags"
+as permissive
+for insert
+to public
 with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-
-  create policy "tags_select"
-  on "public"."tags"
-  as permissive
-  for select
-  to public
+create policy "tags_select"
+on "public"."tags"
+as permissive
+for select
+to public
 using ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-
-  create policy "tags_update"
-  on "public"."tags"
-  as permissive
-  for update
-  to public
+create policy "tags_update"
+on "public"."tags"
+as permissive
+for update
+to public
 using ((user_id = ( SELECT auth.uid() AS uid)))
 with check ((user_id = ( SELECT auth.uid() AS uid)));
 
 
-
-  create policy "Users can delete their own transactions"
-  on "public"."transactions"
-  as permissive
-  for delete
-  to public
+create policy "Users can delete their own transactions"
+on "public"."transactions"
+as permissive
+for delete
+to public
 using ((( SELECT auth.uid() AS uid) = user_id));
 
 
-
-  create policy "Users can insert their own transactions"
-  on "public"."transactions"
-  as permissive
-  for insert
-  to public
+create policy "Users can insert their own transactions"
+on "public"."transactions"
+as permissive
+for insert
+to public
 with check ((( SELECT auth.uid() AS uid) = user_id));
 
 
-
-  create policy "Users can update their own transactions"
-  on "public"."transactions"
-  as permissive
-  for update
-  to public
+create policy "Users can update their own transactions"
+on "public"."transactions"
+as permissive
+for update
+to public
 using ((( SELECT auth.uid() AS uid) = user_id));
 
 
-
-  create policy "Users can view their own transactions"
-  on "public"."transactions"
-  as permissive
-  for select
-  to public
+create policy "Users can view their own transactions"
+on "public"."transactions"
+as permissive
+for select
+to public
 using ((( SELECT auth.uid() AS uid) = user_id));
 
 

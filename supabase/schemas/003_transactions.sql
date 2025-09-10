@@ -1,8 +1,6 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 
 CREATE TABLE transactions (
-    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid REFERENCES auth.users(id),
     date date NOT NULL,
     type transaction_type NOT NULL,

@@ -2,7 +2,7 @@
 -- Base table for per-user Tags dictionary (no RLS/policies here; see next file)
 
 create table if not exists public.tags (
-  id          uuid primary key default uuid_generate_v4(),
+  id          uuid primary key default gen_random_uuid(),
   user_id     uuid not null references auth.users(id) on delete cascade,
   name        text not null,
   description text,
