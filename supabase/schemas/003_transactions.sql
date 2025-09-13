@@ -6,7 +6,7 @@ CREATE TABLE transactions (
     type transaction_type NOT NULL,
     category text,
     category_id uuid REFERENCES categories(id),
-    amount numeric(12, 2) NOT NULL CHECK (amount > 0),
+    amount numeric(12, 2) NOT NULL,
     tags text[],
     notes text,
     bank_account text,

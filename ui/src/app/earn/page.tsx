@@ -338,7 +338,7 @@ export default function EarnPage() {
           </div>
           <div>
             <label className="block text-xs text-gray-500">Amount</label>
-            <input type="number" step="0.01" min="0" className="border rounded px-2 py-1 w-full" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
+            <input type="number" step="0.01" className="border rounded px-2 py-1 w-full" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
           </div>
           <div>
             <label className="block text-xs text-gray-500">Bank Account</label>
