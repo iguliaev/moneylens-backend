@@ -18,7 +18,7 @@ function dump_db() {
     local DATABASE_URL=$1
     local OUT_FILE=$2
 
-    /usr/lib/postgresql/17/bin/pg_dump \
+    pg_dump \
         --format=custom \
         --compress=9 \
         --no-owner \
