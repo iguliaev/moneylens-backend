@@ -93,10 +93,7 @@ log_info "starting backup"
 OUT_FILE="$TMP_DIR/$FILENAME"
 log_info "running pg_dump to $OUT_FILE"
 
-#dump_db "$DATABASE_URL" "$OUT_FILE"
-
-
-OUT_FILE="test.dump"  # For testing without actual DB dump
+dump_db "$DATABASE_URL" "$OUT_FILE"
 
 log_info "dump completed, file size: $(du -h "$OUT_FILE" | cut -f1)"
 
