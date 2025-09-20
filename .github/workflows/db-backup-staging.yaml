@@ -39,4 +39,4 @@ jobs:
 
       - name: Run DB Backup Script
         run: |
-          PATH=${PATH}:/usr/lib/postgresql/17/bin/ ./scripts/backup-db.sh
+          ./scripts/backup-db.sh
