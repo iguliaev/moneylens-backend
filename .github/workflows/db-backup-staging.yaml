@@ -35,7 +35,8 @@ jobs:
           sudo apt update
           sudo apt -y install postgresql-client-17
           echo "/usr/lib/postgresql/17/bin" >> "$GITHUB_PATH"
-          pg_dump --version
+      - name: Verify pg_dump version
+        run: pg_dump --version
 
       - name: Run DB Backup Script
         run: |
