@@ -25,7 +25,7 @@ jobs:
       - name: Install tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-client curl
+          sudo apt-get install -y postgresql-client-17 curl
 
       - name: Run DB Backup Script
         run: |
