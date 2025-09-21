@@ -1,4 +1,4 @@
-name: Staging Databse Backup
+name: Staging Database Backup
 
 on:
   schedule:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   call-backup:
-    uses: moneylens-ws/.github/.github/workflows/backup-engine.yaml@task/update-db-backup-workflow
+    uses: ./.github/workflows/backup-engine.yaml
     with:
       environment: staging
     secrets:
