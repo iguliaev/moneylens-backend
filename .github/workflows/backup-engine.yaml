@@ -9,6 +9,7 @@ on:
       bucket:
         description: "Supabase Storage bucket name"
         required: false
+        type: string
         default: db-backups
     secrets:
       SUPABASE_DB_URL:
