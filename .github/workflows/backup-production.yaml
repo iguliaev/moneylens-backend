@@ -1,4 +1,4 @@
-name: Staging Database Backup
+name: Production Database Backup
 
 on:
   schedule:
