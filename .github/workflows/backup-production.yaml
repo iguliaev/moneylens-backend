@@ -7,7 +7,7 @@ on:
 
 jobs:
   call-backup:
-    uses: ./.github/workflows/backup-engine.yaml
+    uses: ./.github/workflows/_backup-engine.yaml
     with:
       environment: production
       bucket: db-backups
