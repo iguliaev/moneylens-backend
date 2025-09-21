@@ -6,25 +6,31 @@ on:
       environment:
         required: true
         type: string
+      bucket:
+        description: "Supabase Storage bucket name"
+        required: false
+        default: db-backups
     secrets:
-      SUPABASE_STORAGE_URL:
-        required: true
       SUPABASE_DB_URL:
         required: true
       SUPABASE_SERVICE_ROLE_KEY:
         required: true
-
+      SUPABASE_STORAGE_URL:
+        required: true
 
 jobs:
   backup:
+    # Map the logical environment (dev/staging/prod) to a GitHub Environment if names differ
+    # If you have environments named "Staging" / "Prod" use conditional mapping; adjust as needed
+    environment: ${{ (inputs.environment == 'staging' && 'Staging') || (inputs.environment == 'prod' && 'Prod') || inputs.environment }}
     runs-on: ubuntu-latest
     container: postgres:17-alpine
 
     env:
       BACKUP_ENV: ${{ inputs.environment }}
-      SUPABASE_BUCKET: ${{ vars.SUPABASE_BUCKET }}
+      SUPABASE_BUCKET: ${{ inputs.bucket }}
       DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
-      SUPABASE_STORAGE_URL: ${{ secrets.SUPABASE_STORAGE_URL }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_STORAGE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
@@ -36,9 +42,14 @@ jobs:
           apk update
           apk add curl
 
+      - name: Show configuration (masked)
+        run: |
+          echo "Environment: $BACKUP_ENV"
+          echo "Bucket: $SUPABASE_BUCKET"
+          echo "Supabase URL host: $(echo "$SUPABASE_URL" | sed -E 's#https?://([^/]+)/?.*#\1#')"
+
       - name: Verify pg_dump version
         run: pg_dump --version
 
       - name: Run DB Backup Script
-        run: |
-          ./scripts/backup-db.sh
+        run: ./scripts/backup-db.sh
