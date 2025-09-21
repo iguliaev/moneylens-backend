@@ -75,7 +75,7 @@ for var in DATABASE_URL SUPABASE_STORAGE_URL SUPABASE_SERVICE_ROLE_KEY SUPABASE_
 done
 
 # Check required commands
-for cmd in pg_dump curl jq; do
+for cmd in pg_dump curl; do
     if ! command -v "$cmd" &> /dev/null; then
         log_error "Command not found: $cmd"
         exit 1

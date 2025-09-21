@@ -1,0 +1,44 @@
+name: Backup Engine
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+    secrets:
+      DATABASE_URL:
+        required: true
+      SUPABASE_URL:
+        required: true
+      SUPABASE_SERVICE_ROLE_KEY:
+        required: true
+
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    container: postgres:17-alpine
+
+    env:
+      BACKUP_ENV: ${{ inputs.environment }}
+      DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_STORAGE_URL: ${{ secrets.SUPABASE_STORAGE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_BUCKET: ${{ vars.SUPABASE_BUCKET }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install required tools
+        run: |
+          apk update
+          apk add curl
+
+      - name: Verify pg_dump version
+        run: pg_dump --version
+
+      - name: Run DB Backup Script
+        run: |
+          ./scripts/backup-db.sh
