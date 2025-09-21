@@ -21,9 +21,7 @@ on:
 
 jobs:
   backup:
-    # Map the logical environment (dev/staging/prod) to a GitHub Environment if names differ
-    # If you have environments named "Staging" / "Prod" use conditional mapping; adjust as needed
-    environment: ${{ (inputs.environment == 'staging' && 'Staging') || (inputs.environment == 'prod' && 'Prod') || inputs.environment }}
+    environment: ${{ inputs.environment }}
     runs-on: ubuntu-latest
     container: postgres:17-alpine
 
@@ -31,7 +29,7 @@ jobs:
       BACKUP_ENV: ${{ inputs.environment }}
       SUPABASE_BUCKET: ${{ inputs.bucket }}
       DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
-      SUPABASE_DB_URL: ${{ secrets.SUPABASE_STORAGE_URL }}
+      SUPABASE_STORAGE_URL: ${{ secrets.SUPABASE_STORAGE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
     steps:
