@@ -1,4 +1,4 @@
-name: Staging Databse Backup
+name: Backup Engine
 
 on:
   workflow_call:
@@ -17,7 +17,6 @@ on:
 
 jobs:
   backup:
-    environment: staging
     runs-on: ubuntu-latest
     container: postgres:17-alpine
 
