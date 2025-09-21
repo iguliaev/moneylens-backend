@@ -25,8 +25,8 @@ jobs:
 
       - name: Install required tools
         run: |
-          sudo apk update
-          sudo apk add curl
+          apk update
+          apk add curl
 
       - name: Verify pg_dump version
         run: pg_dump --version
