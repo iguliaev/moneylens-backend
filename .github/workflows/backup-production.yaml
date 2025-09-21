@@ -9,7 +9,7 @@ jobs:
   call-backup:
     uses: ./.github/workflows/backup-engine.yaml
     with:
-      environment: staging
+      environment: production
       bucket: db-backups
     secrets:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
