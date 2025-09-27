@@ -4,21 +4,24 @@ This document describes the automated workflows for the backend (Supabase) part 
 
 ---
 ## Index
-1. Backups
+1. Backups & Pruning
 	 - `_backup-engine.yaml` (reusable)
 	 - `backup-staging.yaml`
 	 - `backup-production.yaml`
+	 - `_prune-engine.yaml` (reusable)
+	 - `prune-staging.yaml`
+	 - `prune-production.yaml`
 2. Deployment (migrations)
 	 - `deploy-staging.yaml`
 	 - `deploy-production.yaml`
 3. CI (lint & type consistency)
 	 - `ci.yaml`
 4. Environment / Secret Reference
-5. Backup Storage Layout & Schedule
+5. Backup & Prune Storage Layout & Schedule
 6. Troubleshooting
 
 ---
-## 1. Backups
+## 1. Backups & Pruning
 
 ### 1.1 Reusable Backup Engine: `_backup-engine.yaml`
 Purpose: Encapsulates the logic to perform a Postgres logical backup (`pg_dump -Fc`) and upload the resulting dump to Supabase Object Storage.
@@ -59,6 +62,55 @@ Calls the reusable engine with `environment: production`.
 - `pg_dump --version` logs a 17.x client.
 - Script logs an INFO line for upload success.
 - Object appears in Supabase Storage: `db-backups/<env>/...dump`.
+
+### 1.4 Reusable Prune Engine: `_prune-engine.yaml`
+Purpose: Encapsulates logic to prune (delete) older backup objects from Supabase Storage according to two controls:
+
+- `keep` – always retain the most recent N files (default 7)
+- `days` – delete files older than this many days (default 7)
+
+Invocation model mirrors the backup engine via `workflow_call` inputs:
+
+Inputs (with defaults):
+| Input | Type | Default | Description |
+|-------|------|---------|-------------|
+| `environment` | string | (required) | Logical environment; also used as path prefix. |
+| `bucket` | string | `db-backups` | Target Storage bucket. |
+| `keep` | number | 7 | How many newest objects to always keep. |
+| `days` | number | 7 | Prune objects older than this age (UTC). |
+| `dry_run` | boolean | false | If true, only log candidates; no deletion. |
+
+Secrets (required):
+| Secret | Purpose |
+|--------|---------|
+| `SUPABASE_URL` | Project base URL used by Python client. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Auth to list & delete objects (Service Role legacy key). |
+
+Environment variables set internally: `SUPABASE_BUCKET`, `PRUNE_KEEP`, `PRUNE_DAYS`, `PRUNE_PATH` (defaults to the environment name), `DRY_RUN`.
+
+Execution flow:
+1. Always performs a dry‑run listing step (even if `dry_run` is false) to log candidates for auditability.
+2. If `dry_run` input is false, performs a second pass that actually calls the Python CLI prune command (deletions).
+
+### 1.5 Staging Prune Workflow: `prune-staging.yaml`
+Triggers:
+- Weekly Saturday at 01:10 UTC (`10 1 * * 6`).
+- Manual `workflow_dispatch`.
+
+Calls `_prune-engine.yaml` with `environment: staging` and default retention parameters.
+
+### 1.6 Production Prune Workflow: `prune-production.yaml`
+Triggers:
+- Weekly Saturday at 01:20 UTC (`20 1 * * 6`) — deliberately staggered 10 minutes after staging to reduce concurrent load.
+- Manual `workflow_dispatch`.
+
+Calls `_prune-engine.yaml` with `environment: production`.
+
+### Prune Success Criteria
+- Dry-run step lists candidate files (even if none qualify).
+- Actual prune step reports deleted filenames (if any) and exits 0.
+- Latest N (keep) objects remain untouched; no object newer than the `days` threshold is deleted.
+- Run logs are retained in Actions for audit.
 
 ---
 ## 2. Deployment (Migrations)
@@ -115,7 +167,7 @@ Notes:
 - Never commit secrets—store them as repository or environment-level secrets.
 
 ---
-## 5. Backup Storage Layout & Schedule
+## 5. Backup & Prune Storage Layout & Schedule
 
 Layout inside the bucket (example `db-backups`):
 ```
@@ -126,7 +178,10 @@ db-backups/
 		moneylens-production-pgdump-2025-09-21T02-00-05Z.dump
 ```
 
-Schedule: Both staging and production backups run daily at 02:00 UTC (Cron: `0 2 * * *`).
+Schedules:
+- Backups (staging, production): Daily 02:00 UTC (`0 2 * * *`).
+- Prune (staging): Weekly Saturday 01:10 UTC (`10 1 * * 6`).
+- Prune (production): Weekly Saturday 01:20 UTC (`20 1 * * 6`).
 
 Filename pattern embeds UTC timestamp for uniqueness and easy sorting. All times are UTC.
 
@@ -140,3 +195,6 @@ Filename pattern embeds UTC timestamp for uniqueness and easy sorting. All times
 | `pg_dump` network unreachable | IPv6 route or host mismatch | Use session pooler URL; ensure `sslmode=require` included |
 | Upload HTTP 400 | Malformed upload path or missing bucket | Verify bucket exists and form `file=@...` syntax |
 | Empty backup file | Permission or early pg_dump failure | Examine earlier logs; enable debug flag in script |
+| Prune deletes nothing (expected deletions) | Filename pattern or path prefix mismatch | Confirm objects are under `/<env>/` and time formats parse correctly; check updated_at timestamps |
+| Prune deletes too many | Overlapping criteria (days + keep) | Validate `keep` still protects newest N; adjust days or increase keep value |
+| Prune workflow shows candidates every run | Dry-run step is always executed | This is intentional; disable by editing engine if noise is excessive |
