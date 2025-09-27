@@ -2,6 +2,7 @@ name: Backup Staging Database
 
 on:
   schedule:
+    # Every day at 02:00 UTC
     - cron: '0 2 * * *'
   workflow_dispatch:
 
