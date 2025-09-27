@@ -34,13 +34,15 @@ function dump_db() {
 #   $2 - OBJECT_PATH (path in the bucket)
 #   $3 - FILE_PATH (local file path)
 function upload_to_supabase() {
-    local SUPABASE_BUCKET=$1
-    local OBJECT_PATH=$2
-    local FILE_PATH=$3
+    local SUPABASE_STORAGE_URL=$1
+    local SUPABASE_SERVICE_ROLE_KEY=$2
+    local SUPABASE_BUCKET=$3
+    local OBJECT_PATH=$4
+    local FILE_PATH=$5
 
     local BACKUP_CLI="python3 utils/backup-cli/main.py"
 
-    $BACKUP_CLI upload -b "$SUPABASE_BUCKET" -d "$OBJECT_PATH" -f "$FILE_PATH"
+    SUPABASE_URL="$SUPABASE_STORAGE_URL" SUPABASE_KEY="$SUPABASE_SERVICE_ROLE_KEY" $BACKUP_CLI upload -b "$SUPABASE_BUCKET" -d "$OBJECT_PATH" -f "$FILE_PATH"
 }
 
 # Env vars required:
