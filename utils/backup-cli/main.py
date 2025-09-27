@@ -136,6 +136,7 @@ def main():
         args.func(args)
     except Exception as e:
         logger.error(f"Error occurred: {e}")
+        exit(1)
 
 
 if __name__ == "__main__":
