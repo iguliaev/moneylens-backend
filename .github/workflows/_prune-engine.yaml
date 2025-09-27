@@ -69,11 +69,11 @@ jobs:
             -p "$PRUNE_PATH" \
             --dry-run || true
 
-      # - name: Execute prune
-      #   if: ${{ inputs.dry_run == false }}
-      #   run: |
-      #     python utils/backup-cli/main.py prune \
-      #       -b "$SUPABASE_BUCKET" \
-      #       -k "$PRUNE_KEEP" \
-      #       -d "$PRUNE_DAYS" \
-      #       -p "$PRUNE_PATH"
+      - name: Execute prune
+        if: ${{ inputs.dry_run == false }}
+        run: |
+          python utils/backup-cli/main.py prune \
+            -b "$SUPABASE_BUCKET" \
+            -k "$PRUNE_KEEP" \
+            -d "$PRUNE_DAYS" \
+            -p "$PRUNE_PATH"
