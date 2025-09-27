@@ -69,7 +69,7 @@ def prune_files(args):
         {obj["name"]: obj for obj in to_delete}.values()
     )  # Remove duplicates
 
-    paths_to_delete = [f"{args.path or ''}/{obj['name']}" for obj in to_delete]
+    paths_to_delete = [os.path.join(args.path or '', obj['name']) for obj in to_delete]
 
     if args.dry_run:
         print("Files that would be deleted:")
