@@ -1,0 +1,20 @@
+name: Prune Staging Backups
+
+on:
+  schedule:
+    # Saturday 01:10 UTC
+    - cron: '10 1 * * 6'
+  workflow_dispatch:
+
+jobs:
+  call-prune:
+    uses: ./.github/workflows/_prune-engine.yaml
+    with:
+      environment: staging
+      bucket: db-backups
+      keep: 7
+      days: 7
+      dry_run: false
+    secrets:
+      SUPABASE_URL: ${{ secrets.SUPABASE_STORAGE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

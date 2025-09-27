@@ -1,0 +1,79 @@
+name: Reusable Prune Engine
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment name (staging|production)"
+        required: true
+        type: string
+      bucket:
+        description: "Supabase Storage bucket name"
+        required: false
+        type: string
+        default: db-backups
+      keep:
+        description: "Number of most recent files to always keep"
+        required: false
+        type: number
+        default: 7
+      days:
+        description: "Delete files older than this many days"
+        required: false
+        type: number
+        default: 7
+      dry_run:
+        description: "If true, only log what would be deleted"
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      SUPABASE_URL:
+        required: true
+      SUPABASE_SERVICE_ROLE_KEY:
+        required: true
+
+jobs:
+  prune:
+    name: Prune backups
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_BUCKET: ${{ inputs.bucket }}
+      PRUNE_KEEP: ${{ inputs.keep }}
+      PRUNE_DAYS: ${{ inputs.days }}
+      PRUNE_PATH: ${{ inputs.environment }}
+      DRY_RUN: ${{ inputs.dry_run }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install prune tool
+        run: |
+          pip install -r utils/backup-cli/requirements.txt
+
+      - name: Dry-run prune (always runs first)
+        run: |
+          python utils/backup-cli/main.py prune \
+            -b "$SUPABASE_BUCKET" \
+            -k "$PRUNE_KEEP" \
+            -d "$PRUNE_DAYS" \
+            -p "$PRUNE_PATH" \
+            --dry-run || true
+
+      # - name: Execute prune
+      #   if: ${{ inputs.dry_run == false }}
+      #   run: |
+      #     python utils/backup-cli/main.py prune \
+      #       -b "$SUPABASE_BUCKET" \
+      #       -k "$PRUNE_KEEP" \
+      #       -d "$PRUNE_DAYS" \
+      #       -p "$PRUNE_PATH"
