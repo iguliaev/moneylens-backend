@@ -30,7 +30,7 @@ on:
     secrets:
       SUPABASE_URL:
         required: true
-      SUPABASE_SERVICE_ROLE_KEY:
+      SUPABASE_KEY:
         required: true
 
 jobs:
@@ -40,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
       SUPABASE_BUCKET: ${{ inputs.bucket }}
       PRUNE_KEEP: ${{ inputs.keep }}
       PRUNE_DAYS: ${{ inputs.days }}
