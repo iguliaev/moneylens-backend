@@ -30,11 +30,9 @@ function dump_db() {
 
 # Upload a file to Supabase Storage bucket
 # Args:
-#   $1 - SUPABASE_STORAGE_URL
-#   $2 - SUPABASE_SERVICE_ROLE_KEY
-#   $3 - SUPABASE_BUCKET
-#   $4 - OBJECT_PATH (path in the bucket)
-#   $5 - FILE_PATH (local file path)
+#   $1 - SUPABASE_BUCKET
+#   $2 - OBJECT_PATH (path in the bucket)
+#   $3 - FILE_PATH (local file path)
 function upload_to_supabase() {
     local SUPABASE_STORAGE_URL=$1
     local SUPABASE_SERVICE_ROLE_KEY=$2
@@ -42,22 +40,9 @@ function upload_to_supabase() {
     local OBJECT_PATH=$4
     local FILE_PATH=$5
 
-    local UPLOAD_URL="${SUPABASE_STORAGE_URL%/}/storage/v1/object/${SUPABASE_BUCKET}/${OBJECT_PATH}"
+    local BACKUP_CLI="python3 utils/backup-cli/main.py"
 
-    local HTTP_CODE
-    HTTP_CODE=$(curl -s -w "%{http_code}" -o /dev/null \
-        -X POST \
-        -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
-        -H "x-upsert: true" \
-        -F "file=@${FILE_PATH};type=application/octet-stream" \
-        "$UPLOAD_URL")
-
-    if [[ "$HTTP_CODE" != "200" && "$HTTP_CODE" != "201" ]]; then
-        echo "[backup] upload failed with HTTP $HTTP_CODE" >&2
-        return 1
-    fi
-
-    return 0
+    SUPABASE_URL="$SUPABASE_STORAGE_URL" SUPABASE_KEY="$SUPABASE_SERVICE_ROLE_KEY" $BACKUP_CLI upload -b "$SUPABASE_BUCKET" -d "$OBJECT_PATH" -f "$FILE_PATH"
 }
 
 # Env vars required:
@@ -75,7 +60,7 @@ for var in DATABASE_URL SUPABASE_STORAGE_URL SUPABASE_SERVICE_ROLE_KEY SUPABASE_
 done
 
 # Check required commands
-for cmd in pg_dump curl; do
+for cmd in pg_dump python3; do
     if ! command -v "$cmd" &> /dev/null; then
         log_error "Command not found: $cmd"
         exit 1
