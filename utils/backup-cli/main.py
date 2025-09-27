@@ -69,14 +69,15 @@ def prune_files(args):
         {obj["name"]: obj for obj in to_delete}.values()
     )  # Remove duplicates
 
+    paths_to_delete = [os.path.join(args.path or '', obj['name']) for obj in to_delete]
+
     if args.dry_run:
         print("Files that would be deleted:")
-        for obj in to_delete:
-            print(obj["name"])
+        for path in paths_to_delete:
+            print(path)
 
     else:
-        path_to_delete = [f"{args.path or ''}/{obj['name']}" for obj in to_delete]
-        response = client.storage.from_(args.bucket).remove(path_to_delete)
+        response = client.storage.from_(args.bucket).remove(paths_to_delete)
         for obj in response:
             print(f"Deleted {obj['name']}")
 
