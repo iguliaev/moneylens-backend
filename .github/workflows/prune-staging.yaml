@@ -17,4 +17,4 @@ jobs:
       dry_run: false
     secrets:
       SUPABASE_URL: ${{ secrets.SUPABASE_STORAGE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
