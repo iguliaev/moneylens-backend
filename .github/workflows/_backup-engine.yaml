@@ -1,0 +1,62 @@
+name: Reusable Backup Engine
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      bucket:
+        description: "Supabase Storage bucket name"
+        required: false
+        type: string
+        default: db-backups
+    secrets:
+      SUPABASE_DB_URL:
+        required: true
+      SUPABASE_SERVICE_ROLE_KEY:
+        required: true
+      SUPABASE_STORAGE_URL:
+        required: true
+
+jobs:
+  backup:
+    environment: ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    container: postgres:17-alpine
+
+    env:
+      BACKUP_ENV: ${{ inputs.environment }}
+      SUPABASE_BUCKET: ${{ inputs.bucket }}
+      DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_STORAGE_URL: ${{ secrets.SUPABASE_STORAGE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install required tools
+        run: |
+          apk update
+          apk add python3
+          python3 -m venv /tmp/venv
+          source /tmp/venv/bin/activate
+          pip install -r utils/backup-cli/requirements.txt
+          deactivate
+
+      - name: Show configuration (masked)
+        run: |
+          echo "Environment: $BACKUP_ENV"
+          echo "Bucket: $SUPABASE_BUCKET"
+          echo "Supabase URL host: $(echo "$SUPABASE_URL" | sed -E 's#https?://([^/]+)/?.*#\1#')"
+
+      - name: Verify pg_dump version
+        run: pg_dump --version
+
+      - name: Run DB Backup Script
+        run: |
+          source /tmp/venv/bin/activate
+          ./scripts/backup-db.sh
+          deactivate
+          rm -rf /tmp/venv
