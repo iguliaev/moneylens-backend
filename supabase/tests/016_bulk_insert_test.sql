@@ -98,7 +98,6 @@ SELECT extensions.throws_ok(
 );
 
 -- Test 4: Category Not Found Error
--- Test 4: Category Not Found Error
 SELECT extensions.throws_ok(
   $$
     SELECT bulk_insert_transactions('[
