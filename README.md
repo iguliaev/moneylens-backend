@@ -1,4 +1,4 @@
-# MoneLens
+# MoneyLens
 
 **MoneyLens** is a personal finance tool designed to help you understand where your money goes, assist with budgeting, and provide insights to optimize your spending. With MoneyLens, you can easily track your spendings, earnings, and savings, and gain actionable insights to improve your financial habits.
 
