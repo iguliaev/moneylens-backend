@@ -41,13 +41,33 @@ BEGIN
 
     BEGIN
       -- Required fields
-      IF v_tx->>'date' IS NULL OR v_tx->>'type' IS NULL OR v_tx->>'amount' IS NULL THEN
-        v_errors := v_errors || jsonb_build_object(
-          'index', v_idx,
-          'error', 'Missing required field: date, type, or amount'
-        );
-        CONTINUE;
-      END IF;
+      -- Check for missing required fields and build specific error message
+      DECLARE
+        v_missing_fields text[] := ARRAY[]::text[];
+        v_error_msg text;
+      BEGIN
+        IF v_tx->>'date' IS NULL THEN
+          v_missing_fields := array_append(v_missing_fields, 'date');
+        END IF;
+        IF v_tx->>'type' IS NULL THEN
+          v_missing_fields := array_append(v_missing_fields, 'type');
+        END IF;
+        IF v_tx->>'amount' IS NULL THEN
+          v_missing_fields := array_append(v_missing_fields, 'amount');
+        END IF;
+        IF array_length(v_missing_fields, 1) IS NOT NULL THEN
+          IF array_length(v_missing_fields, 1) = 1 THEN
+            v_error_msg := format('Missing required field: %s', v_missing_fields[1]);
+          ELSE
+            v_error_msg := format('Missing required fields: %s', array_to_string(v_missing_fields, ', '));
+          END IF;
+          v_errors := v_errors || jsonb_build_object(
+            'index', v_idx,
+            'error', v_error_msg
+          );
+          CONTINUE;
+        END IF;
+      END;
 
       -- Type validation (casts to enum)
       BEGIN

@@ -13,7 +13,7 @@ SELECT tests.create_supabase_user('user1@test.com');
 -- Authenticate as test user
 SELECT tests.authenticate_as('user1@test.com');
 
--- Seed categories (use gen_random_uuid() for ids and tests.get_supabase_uid to fetch user id)
+-- Seed categories (use gen_random_uuid() for ids and tests.get_supabase_uid(email) to fetch user id)
 INSERT INTO public.categories (id, user_id, type, name) VALUES
   (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), 'spend', 'Groceries'),
   (gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), 'spend', 'Transport'),
@@ -124,7 +124,6 @@ SELECT extensions.throws_ok(
   'Throws error when category type does not match transaction type'
 );
 
--- Test 6: Bank Account Not Found Error
 -- Test 6: Bank Account Not Found Error
 SELECT extensions.throws_ok(
   $$
