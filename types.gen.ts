@@ -483,6 +483,10 @@ export type Database = {
       }
     }
     Functions: {
+      bulk_insert_transactions: {
+        Args: { p_transactions: Json }
+        Returns: Json
+      }
       delete_bank_account_safe: {
         Args: { p_bank_account_id: string }
         Returns: {
