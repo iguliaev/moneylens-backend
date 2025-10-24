@@ -117,7 +117,7 @@ Calls `_prune-engine.yaml` with `environment: production`.
 
 ### 2.1 Staging Deployment: `deploy-staging.yaml`
 Triggers:
-- `push` to `develop` branch affecting files under `supabase/**`.
+- `push` to `main` branch affecting files under `supabase/**`.
 - Manual dispatch.
 
 Actions:
@@ -127,7 +127,7 @@ Actions:
 
 ### 2.2 Production Deployment: `deploy-production.yaml`
 Triggers:
-- `push` to `main` branch affecting `supabase/**`.
+- `push` to `release` branch affecting `supabase/**`.
 - Manual dispatch (can be used for emergency redeploy).
 
 

@@ -166,9 +166,33 @@ See [supabase/config.toml](supabase/config.toml) for project configuration.
 - You can edit or add SQL files for schema changes.
 - Use the Supabase Studio (`supabase studio`) for a web UI to manage your database and data.
 
-## Frontend
+## Development Workflow
 
-The UI will be built with [Refine](https://refine.dev/), a React-based framework for building data-intensive applications. (Coming soon!)
+This project uses a Git flow centered around two main branches: `main` and `release`.
+
+- **`main`**: The default branch and the primary line of development. All new features, bugfixes, and chores are branched from here.
+- **`release`**: Represents the production-ready state of the application.
+
+### Contribution Process
+
+1.  **Create a branch**: Start new work by creating a branch from `main`. Use a descriptive naming convention, such as:
+    - `feature/<feature-name>`
+    - `bugfix/<bug-name>`
+    - `chore/<task-name>`
+
+2.  **Commit changes**: Make your changes and commit them with clear, descriptive messages.
+
+3.  **Submit a Pull Request (PR)**: Once your work is ready for review, open a PR against the `main` branch.
+
+4.  **Review and Merge**: After the PR is reviewed and approved, it will be merged into `main`.
+
+## Deployment
+
+The project uses a two-environment deployment strategy tied to the branching model.
+
+- **Staging Environment**: Merging a PR into the `main` branch automatically triggers a deployment to the staging environment. This allows for verification and testing before a production release.
+
+- **Production Environment**: The `release` branch is manually synchronized with `main` when a feature set is ready for production. Pushing changes to the `release` branch automatically triggers a deployment to the production environment.
 
 ## License
 
