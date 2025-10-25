@@ -1,5 +1,3 @@
--- Link transactions to categories and enforce type match
-
 -- Enforce that transaction type matches category type using a trigger
 CREATE OR REPLACE FUNCTION check_transaction_category_type()
 RETURNS TRIGGER
