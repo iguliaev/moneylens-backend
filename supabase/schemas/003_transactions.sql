@@ -10,6 +10,7 @@ CREATE TABLE transactions (
     tags text[],
     notes text,
     bank_account text,
+    bank_account_id uuid REFERENCES bank_accounts(id),
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now()
 );
