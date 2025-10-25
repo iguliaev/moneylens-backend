@@ -238,9 +238,7 @@ export type Database = {
         Row: {
           amount: number | null
           bank_account: string | null
-          bank_account_id: string | null
           category: string | null
-          category_id: string | null
           created_at: string | null
           date: string | null
           id: string | null
@@ -250,74 +248,13 @@ export type Database = {
           updated_at: string | null
           user_id: string | null
         }
-        Insert: {
-          amount?: number | null
-          bank_account?: string | null
-          bank_account_id?: string | null
-          category?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          id?: string | null
-          notes?: string | null
-          tags?: string[] | null
-          type?: Database["public"]["Enums"]["transaction_type"] | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number | null
-          bank_account?: string | null
-          bank_account_id?: string | null
-          category?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          id?: string | null
-          notes?: string | null
-          tags?: string[] | null
-          type?: Database["public"]["Enums"]["transaction_type"] | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "transactions_bank_account_id_fkey"
-            columns: ["bank_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_bank_account_id_fkey"
-            columns: ["bank_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts_with_usage"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories_with_usage"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       transactions_save: {
         Row: {
           amount: number | null
           bank_account: string | null
-          bank_account_id: string | null
           category: string | null
-          category_id: string | null
           created_at: string | null
           date: string | null
           id: string | null
@@ -327,74 +264,13 @@ export type Database = {
           updated_at: string | null
           user_id: string | null
         }
-        Insert: {
-          amount?: number | null
-          bank_account?: string | null
-          bank_account_id?: string | null
-          category?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          id?: string | null
-          notes?: string | null
-          tags?: string[] | null
-          type?: Database["public"]["Enums"]["transaction_type"] | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number | null
-          bank_account?: string | null
-          bank_account_id?: string | null
-          category?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          id?: string | null
-          notes?: string | null
-          tags?: string[] | null
-          type?: Database["public"]["Enums"]["transaction_type"] | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "transactions_bank_account_id_fkey"
-            columns: ["bank_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_bank_account_id_fkey"
-            columns: ["bank_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts_with_usage"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories_with_usage"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       transactions_spend: {
         Row: {
           amount: number | null
           bank_account: string | null
-          bank_account_id: string | null
           category: string | null
-          category_id: string | null
           created_at: string | null
           date: string | null
           id: string | null
@@ -404,66 +280,7 @@ export type Database = {
           updated_at: string | null
           user_id: string | null
         }
-        Insert: {
-          amount?: number | null
-          bank_account?: string | null
-          bank_account_id?: string | null
-          category?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          id?: string | null
-          notes?: string | null
-          tags?: string[] | null
-          type?: Database["public"]["Enums"]["transaction_type"] | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number | null
-          bank_account?: string | null
-          bank_account_id?: string | null
-          category?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          id?: string | null
-          notes?: string | null
-          tags?: string[] | null
-          type?: Database["public"]["Enums"]["transaction_type"] | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "transactions_bank_account_id_fkey"
-            columns: ["bank_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_bank_account_id_fkey"
-            columns: ["bank_account_id"]
-            isOneToOne: false
-            referencedRelation: "bank_accounts_with_usage"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "categories_with_usage"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       view_monthly_category_totals: {
         Row: {
