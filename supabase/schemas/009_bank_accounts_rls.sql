@@ -28,25 +28,10 @@ on public.bank_accounts
 for delete
 using (user_id = (select auth.uid()));
 
--- Auto-assign user_id
-create or replace function public.bank_accounts_set_user_id()
-returns trigger
-language plpgsql
--- Harden search_path (Option 2: empty) so only fully-qualified names resolve.
-set search_path = ''
-as $$
-begin
-  if new.user_id is null then
-    new.user_id := auth.uid(); -- schema-qualified call is safe with empty path
-  end if;
-  return new;
-end;
-$$;
-
 drop trigger if exists set_user_id_on_bank_accounts on public.bank_accounts;
 create trigger set_user_id_on_bank_accounts
 before insert on public.bank_accounts
-for each row execute function public.bank_accounts_set_user_id();
+for each row execute function public.tg_set_user_id();
 
 -- Keep updated_at fresh on UPDATE (reuse tg_set_updated_at from categories)
 drop trigger if exists set_updated_at_on_bank_accounts on public.bank_accounts;
