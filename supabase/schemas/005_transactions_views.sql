@@ -1,12 +1,57 @@
 -- Views for spendings, earnings, and savings (using enum comparison)
 CREATE OR REPLACE VIEW transactions_spend AS
-SELECT * FROM transactions WHERE type = 'spend'::transaction_type;
+SELECT
+  t.id,
+  t.user_id,
+  t.date,
+  t.type,
+  COALESCE(t.category, c.name) AS category,
+  t.amount,
+  t.tags,
+  t.notes,
+  COALESCE(t.bank_account, b.name) AS bank_account,
+  t.created_at,
+  t.updated_at
+FROM transactions t
+LEFT JOIN bank_accounts b ON t.bank_account_id = b.id
+LEFT JOIN categories c ON t.category_id = c.id
+WHERE t.type = 'spend'::transaction_type;
 
 CREATE OR REPLACE VIEW transactions_earn AS
-SELECT * FROM transactions WHERE type = 'earn'::transaction_type;
+SELECT
+  t.id,
+  t.user_id,
+  t.date,
+  t.type,
+  COALESCE(t.category, c.name) AS category,
+  t.amount,
+  t.tags,
+  t.notes,
+  COALESCE(t.bank_account, b.name) AS bank_account,
+  t.created_at,
+  t.updated_at
+FROM transactions t
+LEFT JOIN bank_accounts b ON t.bank_account_id = b.id
+LEFT JOIN categories c ON t.category_id = c.id
+WHERE t.type = 'earn'::transaction_type;
 
 CREATE OR REPLACE VIEW transactions_save AS
-SELECT * FROM transactions WHERE type = 'save'::transaction_type;
+SELECT
+  t.id,
+  t.user_id,
+  t.date,
+  t.type,
+  COALESCE(t.category, c.name) AS category,
+  t.amount,
+  t.tags,
+  t.notes,
+  COALESCE(t.bank_account, b.name) AS bank_account,
+  t.created_at,
+  t.updated_at
+FROM transactions t
+LEFT JOIN bank_accounts b ON t.bank_account_id = b.id
+LEFT JOIN categories c ON t.category_id = c.id
+WHERE t.type = 'save'::transaction_type;
 
 -- ============================================================================
 CREATE OR REPLACE VIEW view_monthly_totals
