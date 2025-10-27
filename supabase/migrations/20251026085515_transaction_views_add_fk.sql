@@ -4,7 +4,9 @@ drop view if exists "public"."transactions_save";
 
 drop view if exists "public"."transactions_spend";
 
-create or replace view "public"."transactions_earn" as  SELECT t.id,
+create or replace view "public"."transactions_earn"
+with(security_invoker = true) as
+  SELECT t.id,
     t.user_id,
     t.date,
     t.type,
@@ -23,7 +25,9 @@ create or replace view "public"."transactions_earn" as  SELECT t.id,
   WHERE (t.type = 'earn'::transaction_type);
 
 
-create or replace view "public"."transactions_save" as  SELECT t.id,
+create or replace view "public"."transactions_save"
+with(security_invoker = true) as
+  SELECT t.id,
     t.user_id,
     t.date,
     t.type,
@@ -42,7 +46,9 @@ create or replace view "public"."transactions_save" as  SELECT t.id,
   WHERE (t.type = 'save'::transaction_type);
 
 
-create or replace view "public"."transactions_spend" as  SELECT t.id,
+create or replace view "public"."transactions_spend"
+with(security_invoker = true) as
+  SELECT t.id,
     t.user_id,
     t.date,
     t.type,
