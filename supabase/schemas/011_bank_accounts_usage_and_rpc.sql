@@ -1,7 +1,8 @@
 -- 011_bank_accounts_usage_and_rpc.sql
 -- View bank_accounts_with_usage and delete_bank_account_safe RPC
 
-create or replace view public.bank_accounts_with_usage as
+create or replace view public.bank_accounts_with_usage
+with (security_invoker = true) as
 select
   b.id,
   b.user_id,
