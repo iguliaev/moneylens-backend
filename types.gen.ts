@@ -238,6 +238,7 @@ export type Database = {
         Row: {
           amount: number | null
           bank_account: string | null
+          bank_account_id: string | null
           category: string | null
           category_id: string | null
           created_at: string | null
@@ -249,35 +250,21 @@ export type Database = {
           updated_at: string | null
           user_id: string | null
         }
-        Insert: {
-          amount?: number | null
-          bank_account?: string | null
-          category?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          id?: string | null
-          notes?: string | null
-          tags?: string[] | null
-          type?: Database["public"]["Enums"]["transaction_type"] | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number | null
-          bank_account?: string | null
-          category?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          id?: string | null
-          notes?: string | null
-          tags?: string[] | null
-          type?: Database["public"]["Enums"]["transaction_type"] | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
         Relationships: [
+          {
+            foreignKeyName: "transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts_with_usage"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_category_id_fkey"
             columns: ["category_id"]
@@ -298,6 +285,7 @@ export type Database = {
         Row: {
           amount: number | null
           bank_account: string | null
+          bank_account_id: string | null
           category: string | null
           category_id: string | null
           created_at: string | null
@@ -309,35 +297,21 @@ export type Database = {
           updated_at: string | null
           user_id: string | null
         }
-        Insert: {
-          amount?: number | null
-          bank_account?: string | null
-          category?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          id?: string | null
-          notes?: string | null
-          tags?: string[] | null
-          type?: Database["public"]["Enums"]["transaction_type"] | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number | null
-          bank_account?: string | null
-          category?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          id?: string | null
-          notes?: string | null
-          tags?: string[] | null
-          type?: Database["public"]["Enums"]["transaction_type"] | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
         Relationships: [
+          {
+            foreignKeyName: "transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts_with_usage"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_category_id_fkey"
             columns: ["category_id"]
@@ -358,6 +332,7 @@ export type Database = {
         Row: {
           amount: number | null
           bank_account: string | null
+          bank_account_id: string | null
           category: string | null
           category_id: string | null
           created_at: string | null
@@ -369,35 +344,21 @@ export type Database = {
           updated_at: string | null
           user_id: string | null
         }
-        Insert: {
-          amount?: number | null
-          bank_account?: string | null
-          category?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          id?: string | null
-          notes?: string | null
-          tags?: string[] | null
-          type?: Database["public"]["Enums"]["transaction_type"] | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number | null
-          bank_account?: string | null
-          category?: string | null
-          category_id?: string | null
-          created_at?: string | null
-          date?: string | null
-          id?: string | null
-          notes?: string | null
-          tags?: string[] | null
-          type?: Database["public"]["Enums"]["transaction_type"] | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
         Relationships: [
+          {
+            foreignKeyName: "transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts_with_usage"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_category_id_fkey"
             columns: ["category_id"]
@@ -483,6 +444,10 @@ export type Database = {
       }
     }
     Functions: {
+      bulk_insert_transactions: {
+        Args: { p_transactions: Json }
+        Returns: Json
+      }
       delete_bank_account_safe: {
         Args: { p_bank_account_id: string }
         Returns: {

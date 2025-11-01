@@ -1,4 +1,4 @@
--- 005_categories.sql
+-- 001_categories.sql
 -- Create categories table for user-defined transaction categories
 
 CREATE TABLE IF NOT EXISTS categories (

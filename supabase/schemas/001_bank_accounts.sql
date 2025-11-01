@@ -1,4 +1,4 @@
--- 008_bank_accounts.sql
+-- 001_bank_accounts.sql
 -- Per-user bank accounts dictionary
 
 create table if not exists public.bank_accounts (

@@ -29,23 +29,10 @@ on public.tags
 for delete
 using (user_id = (select auth.uid()));
 
--- Set user_id automatically if missing
-create or replace function public.tags_set_user_id()
-returns trigger
-language plpgsql
-set search_path = ''
-as $$
-begin
-  if new.user_id is null then
-    new.user_id := auth.uid();
-  end if;
-  return new;
-end$$;
-
 drop trigger if exists set_user_id_on_tags on public.tags;
 create trigger set_user_id_on_tags
 before insert on public.tags
-for each row execute function public.tags_set_user_id();
+for each row execute function public.tg_set_user_id();
 
 -- Keep updated_at fresh on UPDATE (reuse tg_set_updated_at from categories)
 drop trigger if exists set_updated_at_on_tags on public.tags;

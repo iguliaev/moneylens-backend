@@ -1,8 +1,5 @@
 -- 010_transactions_bank_account_fk.sql
--- Add bank_account_id to transactions and enforce it belongs to same user
-
-alter table if exists public.transactions
-  add column if not exists bank_account_id uuid references public.bank_accounts(id);
+-- Enforce bank account belongs to same user
 
 create or replace function public.check_transaction_bank_account()
 returns trigger
