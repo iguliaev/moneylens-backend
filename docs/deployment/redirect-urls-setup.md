@@ -9,14 +9,14 @@
 ## URLs to Add
 
 ### Site URL
-- Production: `https://moneylens.app`
-- Staging: `https://staging.moneylens.app`
+- Production: `https://moneylens-mocha.vercel.app/`
+- Staging: `https://moneylens-git-main-igor-guliaevs-projects.vercel.app/`
 - Local development: `http://localhost:3000`
 
 ### Additional Redirect URLs
 - Add any allowed redirect destinations that your application uses (for example):
-  - `https://moneylens.app`
-  - `https://staging.moneylens.app`
+  - `https://moneylens-mocha.vercel.app/`
+  - `https://moneylens-git-main-igor-guliaevs-projects.vercel.app/`
   - `http://localhost:3000`
 
 
