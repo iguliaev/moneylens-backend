@@ -1,3 +1,23 @@
+drop view if exists public.categories_with_usage;
+
+drop view if exists public.bank_accounts_with_usage;
+
+drop view if exists public.tags_with_usage;
+
+drop view if exists public.view_monthly_category_totals;
+
+drop view if exists public.view_monthly_tagged_type_totals;
+
+drop view if exists public.view_monthly_totals;
+
+drop view if exists public.view_tagged_type_totals;
+
+drop view if exists public.view_yearly_category_totals;
+
+drop view if exists public.view_yearly_tagged_type_totals;
+
+drop view if exists public.view_yearly_totals;
+
 create or replace view public.categories_with_usage
 with (security_invoker = true) as
 select
@@ -62,3 +82,83 @@ left join (
  and u.tag = g.name;
 
 comment on view public.tags_with_usage is 'Per-user tags with reference counts from transactions (in_use_count).';
+
+
+create or replace view "public"."view_monthly_category_totals"
+with (security_invoker = true) as
+SELECT t.user_id,
+    date_trunc('month'::text, (t.date)::timestamp with time zone) AS month,
+    c.name AS category,
+    t.type,
+    sum(t.amount) AS total
+   FROM (transactions t
+     JOIN categories c ON ((t.category_id = c.id)))
+  GROUP BY t.user_id, (date_trunc('month'::text, (t.date)::timestamp with time zone)), c.name, t.type
+  ORDER BY t.user_id, (date_trunc('month'::text, (t.date)::timestamp with time zone)) DESC, c.name, t.type;
+
+
+create or replace view "public"."view_monthly_tagged_type_totals"
+with (security_invoker = true) as
+ SELECT user_id, 
+    date_trunc('month'::text, (date)::timestamp with time zone) AS month,
+    type,
+    tags,
+    sum(amount) AS total
+   FROM transactions
+  GROUP BY user_id, (date_trunc('month'::text, (date)::timestamp with time zone)), type, tags;
+
+
+create or replace view "public"."view_monthly_totals"
+with (security_invoker = true) as
+ SELECT user_id,
+    date_trunc('month'::text, (date)::timestamp with time zone) AS month,
+    type,
+    sum(amount) AS total
+   FROM transactions
+  GROUP BY user_id, (date_trunc('month'::text, (date)::timestamp with time zone)), type
+  ORDER BY user_id, (date_trunc('month'::text, (date)::timestamp with time zone)) DESC, type;
+
+
+create or replace view "public"."view_tagged_type_totals"
+with (security_invoker = true) as
+ SELECT user_id,
+    type,
+    tags,
+    sum(amount) AS total
+   FROM transactions
+  GROUP BY user_id, type, tags;
+
+
+create or replace view "public"."view_yearly_category_totals"
+with (security_invoker = true) as
+ SELECT t.user_id,
+    date_trunc('year'::text, (t.date)::timestamp with time zone) AS year,
+    c.name AS category,
+    t.type,
+    sum(t.amount) AS total
+   FROM (transactions t
+     JOIN categories c ON ((t.category_id = c.id)))
+  GROUP BY t.user_id, (date_trunc('year'::text, (t.date)::timestamp with time zone)), c.name, t.type
+  ORDER BY t.user_id, (date_trunc('year'::text, (t.date)::timestamp with time zone)) DESC, c.name, t.type;
+
+
+create or replace view "public"."view_yearly_tagged_type_totals"
+with (security_invoker = true) as
+ SELECT user_id,
+    date_trunc('year'::text, (date)::timestamp with time zone) AS year,
+    type,
+    tags,
+    sum(amount) AS total
+   FROM transactions
+  GROUP BY user_id, (date_trunc('year'::text, (date)::timestamp with time zone)), type, tags;
+
+
+create or replace view "public"."view_yearly_totals"
+with (security_invoker = true) as
+ SELECT user_id,
+    date_trunc('year'::text, (date)::timestamp with time zone) AS year,
+    type,
+    sum(amount) AS total
+   FROM transactions
+  GROUP BY user_id, (date_trunc('year'::text, (date)::timestamp with time zone)), type
+  ORDER BY user_id, (date_trunc('year'::text, (date)::timestamp with time zone)) DESC, type;
