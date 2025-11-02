@@ -1,7 +1,8 @@
 -- 014_tags_usage_and_rpc.sql
 -- View tags_with_usage and delete_tag_safe RPC
 
-create or replace view public.tags_with_usage as
+create or replace view public.tags_with_usage
+with (security_invoker = true) as
 select
   g.id,
   g.user_id,

@@ -1,7 +1,8 @@
 -- View: categories_with_usage
 -- Exposes per-user usage counts (number of transactions referencing each category)
 
-create or replace view public.categories_with_usage as
+create or replace view public.categories_with_usage
+with (security_invoker = true) as
 select
   c.id,
   c.user_id,
