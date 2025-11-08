@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(6);
+select plan(10);
 
 -- Create test users
 select tests.create_supabase_user('user1@test.com');
@@ -15,6 +15,10 @@ select tests.create_supabase_user('user3@test.com');
 select tests.create_supabase_user('user4@test.com');
 select tests.create_supabase_user('user5@test.com');
 select tests.create_supabase_user('user6@test.com');
+select tests.create_supabase_user('user7@test.com');
+select tests.create_supabase_user('user8@test.com');
+select tests.create_supabase_user('user9@test.com');
+select tests.create_supabase_user('user10@test.com');
 
 -- Authenticate as user1 when helpful (not required for insert_categories which uses explicit user_id)
 select tests.authenticate_as('user1@test.com');
@@ -75,6 +79,51 @@ SELECT insert_categories(tests.get_supabase_uid('user6@test.com'), '[{"type":"sp
 SELECT ok(
   (SELECT description IS NULL FROM categories WHERE user_id = tests.get_supabase_uid('user6@test.com') AND name = 'NullDesc'),
   'NULL description handled correctly'
+);
+
+-- continue with other tests below; finish/rollback will be at end
+
+-- Unit tests for insert_bank_accounts(p_user_id uuid, p_bank_accounts jsonb)
+
+-- Test 7: Insert New Bank Accounts
+select tests.authenticate_as('user7@test.com');
+SELECT insert_bank_accounts(tests.get_supabase_uid('user7@test.com'),
+  '[
+    {"name": "Monzo", "description": "Monzo Current Account"},
+    {"name": "Revolut", "description": null}
+  ]'::jsonb);
+
+SELECT is(
+  (SELECT COUNT(*) FROM bank_accounts WHERE user_id = tests.get_supabase_uid('user7@test.com')),
+  2::bigint,
+  'Insert New Bank Accounts: 2 rows inserted'
+);
+
+-- Test 8: Skip Duplicate Bank Accounts
+select tests.authenticate_as('user8@test.com');
+SELECT insert_bank_accounts(tests.get_supabase_uid('user8@test.com'), '[{"name":"Monzo","description":"Monzo Current Account"}]'::jsonb);
+SELECT insert_bank_accounts(tests.get_supabase_uid('user8@test.com'), '[{"name":"Monzo","description":"Monzo Current Account"}]'::jsonb);
+
+SELECT is(
+  (SELECT COUNT(*) FROM bank_accounts WHERE user_id = tests.get_supabase_uid('user8@test.com') AND name = 'Monzo'),
+  1::bigint,
+  'Skip Duplicate Bank Accounts: duplicates are not created'
+);
+
+-- Test 9: Missing Required Field - name (should raise)
+select tests.authenticate_as('user9@test.com');
+SELECT throws_like(
+  $$ SELECT insert_bank_accounts(tests.get_supabase_uid('user9@test.com'), '[{"description":"no name"}]'::jsonb) $$,
+  '%missing required field%'
+);
+
+-- Test 10: NULL Description Handling
+select tests.authenticate_as('user10@test.com');
+SELECT insert_bank_accounts(tests.get_supabase_uid('user10@test.com'), '[{"name":"NullDescAccount","description": null}]'::jsonb);
+
+SELECT ok(
+  (SELECT description IS NULL FROM bank_accounts WHERE user_id = tests.get_supabase_uid('user10@test.com') AND name = 'NullDescAccount'),
+  'NULL description handled correctly for bank accounts'
 );
 
 select * from finish();
