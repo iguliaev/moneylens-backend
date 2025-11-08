@@ -39,7 +39,7 @@ BEGIN
     WHERE typ NOT IN (
       SELECT enumlabel
       FROM pg_enum
-      WHERE enumtypid = 'transaction_type'::regtype
+      WHERE enumtypid = 'public.transaction_type'::regtype
     )
   )
   SELECT typ INTO v_invalid_type FROM invalid LIMIT 1;
@@ -53,7 +53,7 @@ BEGIN
   INSERT INTO public.categories (user_id, type, name, description)
   SELECT
     p_user_id,
-    (elem->>'type')::transaction_type,
+    (elem->>'type')::public.transaction_type,
     elem->>'name',
     CASE WHEN (elem ? 'description') THEN (elem->>'description') ELSE NULL END
   FROM jsonb_array_elements(p_categories) AS elem
