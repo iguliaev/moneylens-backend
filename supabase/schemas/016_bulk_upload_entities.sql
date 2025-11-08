@@ -15,6 +15,16 @@ DECLARE
   v_missing_count int;
   v_invalid_type text;
 BEGIN
+  -- Authorization: ensure the caller is authenticated and may act for p_user_id.
+  -- Prefer explicit check rather than allowing arbitrary p_user_id values.
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'insert_categories: not authenticated' USING ERRCODE = '42501';
+  END IF;
+
+  IF auth.uid()::text <> p_user_id::text THEN
+    RAISE EXCEPTION 'insert_categories: not authorized to insert for this user' USING ERRCODE = '42501';
+  END IF;
+
   -- Nothing to do for NULL or empty input
   IF p_categories IS NULL OR jsonb_array_length(p_categories) = 0 THEN
     RETURN;
@@ -54,17 +64,19 @@ BEGIN
   SELECT
     p_user_id,
     (elem->>'type')::public.transaction_type,
-    elem->>'name',
-    CASE WHEN (elem ? 'description') THEN (elem->>'description') ELSE NULL END
+  elem->>'name',
+  elem->>'description'
   FROM jsonb_array_elements(p_categories) AS elem
-  WHERE elem->>'name' IS NOT NULL
-    AND elem->>'type' IS NOT NULL
   ON CONFLICT (user_id, type, name) DO NOTHING;
 
   RETURN;
 EXCEPTION
+  -- Re-raise validation/user-raised errors so their original message and SQLSTATE
+  -- are preserved (RAISE EXCEPTION produces SQLSTATE 'P0001').
+  WHEN SQLSTATE 'P0001' THEN
+    RAISE;
   WHEN others THEN
-    -- Keep the exception message clear for callers
+    -- Wrap unexpected errors to give a clear function-level context.
     RAISE EXCEPTION 'insert_categories failed: %', SQLERRM;
 END;
 $$;
