@@ -469,6 +469,10 @@ export type Database = {
           ok: boolean
         }[]
       }
+      insert_categories: {
+        Args: { p_categories: Json; p_user_id: string }
+        Returns: undefined
+      }
       sum_transactions_amount: {
         Args: {
           p_bank_account?: string
