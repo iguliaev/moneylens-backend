@@ -64,8 +64,8 @@ BEGIN
   SELECT
     p_user_id,
     (elem->>'type')::public.transaction_type,
-  elem->>'name',
-  elem->>'description'
+    elem->>'name',
+    elem->>'description'
   FROM jsonb_array_elements(p_categories) AS elem
   ON CONFLICT (user_id, type, name) DO NOTHING;
 
