@@ -477,6 +477,10 @@ export type Database = {
         Args: { p_categories: Json; p_user_id: string }
         Returns: undefined
       }
+      insert_tags: {
+        Args: { p_tags: Json; p_user_id: string }
+        Returns: undefined
+      }
       sum_transactions_amount: {
         Args: {
           p_bank_account?: string

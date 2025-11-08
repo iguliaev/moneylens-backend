@@ -6,7 +6,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(10);
+select plan(14);
 
 -- Create test users
 select tests.create_supabase_user('user1@test.com');
@@ -19,6 +19,10 @@ select tests.create_supabase_user('user7@test.com');
 select tests.create_supabase_user('user8@test.com');
 select tests.create_supabase_user('user9@test.com');
 select tests.create_supabase_user('user10@test.com');
+select tests.create_supabase_user('user11@test.com');
+select tests.create_supabase_user('user12@test.com');
+select tests.create_supabase_user('user13@test.com');
+select tests.create_supabase_user('user14@test.com');
 
 -- Authenticate as user1 when helpful (not required for insert_categories which uses explicit user_id)
 select tests.authenticate_as('user1@test.com');
@@ -114,7 +118,8 @@ SELECT is(
 select tests.authenticate_as('user9@test.com');
 SELECT throws_like(
   $$ SELECT insert_bank_accounts(tests.get_supabase_uid('user9@test.com'), '[{"description":"no name"}]'::jsonb) $$,
-  '%missing required field%'
+  '%missing required field%',
+  'Missing name should raise a validation error for bank accounts'
 );
 
 -- Test 10: NULL Description Handling
@@ -124,6 +129,51 @@ SELECT insert_bank_accounts(tests.get_supabase_uid('user10@test.com'), '[{"name"
 SELECT ok(
   (SELECT description IS NULL FROM bank_accounts WHERE user_id = tests.get_supabase_uid('user10@test.com') AND name = 'NullDescAccount'),
   'NULL description handled correctly for bank accounts'
+);
+
+-- Unit tests for insert_tags(p_user_id uuid, p_tags jsonb)
+
+-- Test 11: Insert New Tags
+select tests.authenticate_as('user11@test.com');
+SELECT insert_tags(tests.get_supabase_uid('user11@test.com'),
+  '[
+    {"name": "essentials", "description": "Essential expenses"},
+    {"name": "monthly", "description": null},
+    {"name": "one-off", "description": "One-off purchases"}
+  ]'::jsonb);
+
+SELECT is(
+  (SELECT COUNT(*) FROM tags WHERE user_id = tests.get_supabase_uid('user11@test.com')),
+  3::bigint,
+  'Insert New Tags: 3 rows inserted'
+);
+
+-- Test 12: Skip Duplicate Tags
+select tests.authenticate_as('user12@test.com');
+SELECT insert_tags(tests.get_supabase_uid('user12@test.com'), '[{"name":"essentials","description":"Essential expenses"}]'::jsonb);
+SELECT insert_tags(tests.get_supabase_uid('user12@test.com'), '[{"name":"essentials","description":"Essential expenses"}]'::jsonb);
+
+SELECT is(
+  (SELECT COUNT(*) FROM tags WHERE user_id = tests.get_supabase_uid('user12@test.com') AND name = 'essentials'),
+  1::bigint,
+  'Skip Duplicate Tags: duplicates are not created'
+);
+
+-- Test 13: Missing Required Field - name (should raise)
+select tests.authenticate_as('user13@test.com');
+SELECT throws_like(
+  $$ SELECT insert_tags(tests.get_supabase_uid('user13@test.com'), '[{"description":"no name"}]'::jsonb) $$,
+  '%missing required field%',
+  'Missing name should raise a validation error for tags'
+);
+
+-- Test 14: NULL Description Handling
+select tests.authenticate_as('user14@test.com');
+SELECT insert_tags(tests.get_supabase_uid('user14@test.com'), '[{"name":"NullDescTag","description": null}]'::jsonb);
+
+SELECT ok(
+  (SELECT description IS NULL FROM tags WHERE user_id = tests.get_supabase_uid('user14@test.com') AND name = 'NullDescTag'),
+  'NULL description handled correctly for tags'
 );
 
 select * from finish();
