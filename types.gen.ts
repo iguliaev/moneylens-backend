@@ -448,10 +448,7 @@ export type Database = {
         Args: { p_transactions: Json }
         Returns: Json
       }
-      bulk_upload_data: {
-        Args: { p_payload: Json }
-        Returns: Json
-      }
+      bulk_upload_data: { Args: { p_payload: Json }; Returns: Json }
       delete_bank_account_safe: {
         Args: { p_bank_account_id: string }
         Returns: {
