@@ -6,7 +6,7 @@ CREATE OR REPLACE FUNCTION insert_categories(
   p_user_id uuid,
   p_categories jsonb
 )
-RETURNS void
+RETURNS int
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
@@ -14,6 +14,7 @@ AS $$
 DECLARE
   v_missing_count int;
   v_invalid_type text;
+  v_inserted_count int := 0;
 BEGIN
   -- Authorization: ensure the caller is authenticated and may act for p_user_id.
   -- Prefer explicit check rather than allowing arbitrary p_user_id values.
@@ -27,7 +28,7 @@ BEGIN
 
   -- Nothing to do for NULL or empty input
   IF p_categories IS NULL OR jsonb_array_length(p_categories) = 0 THEN
-    RETURN;
+    RETURN 0;
   END IF;
 
   -- Validate required fields: every element must have name and type
@@ -68,8 +69,11 @@ BEGIN
     elem->>'description'
   FROM jsonb_array_elements(p_categories) AS elem
   ON CONFLICT (user_id, type, name) DO NOTHING;
+  
+  -- Get the number of rows actually inserted
+  GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
 
-  RETURN;
+  RETURN v_inserted_count;
 EXCEPTION
   -- Re-raise validation/user-raised errors so their original message and SQLSTATE
   -- are preserved (RAISE EXCEPTION produces SQLSTATE 'P0001').
@@ -89,13 +93,14 @@ CREATE OR REPLACE FUNCTION insert_bank_accounts(
   p_user_id uuid,
   p_bank_accounts jsonb
 )
-RETURNS void
+RETURNS int
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
   v_missing_count int;
+  v_inserted_count int := 0;
 BEGIN
   -- Authorization
   IF auth.uid() IS NULL THEN
@@ -108,7 +113,7 @@ BEGIN
 
   -- Nothing to do for NULL or empty input
   IF p_bank_accounts IS NULL OR jsonb_array_length(p_bank_accounts) = 0 THEN
-    RETURN;
+    RETURN 0;
   END IF;
 
   -- Validate required field: name must be present for every element
@@ -129,8 +134,11 @@ BEGIN
     elem->>'description'
   FROM jsonb_array_elements(p_bank_accounts) AS elem
   ON CONFLICT (user_id, name) DO NOTHING;
+  
+  -- Get the number of rows actually inserted
+  GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
 
-  RETURN;
+  RETURN v_inserted_count;
 EXCEPTION
   WHEN SQLSTATE 'P0001' THEN
     RAISE;
@@ -145,13 +153,14 @@ CREATE OR REPLACE FUNCTION insert_tags(
   p_user_id uuid,
   p_tags jsonb
 )
-RETURNS void
+RETURNS int
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
   v_missing_count int;
+  v_inserted_count int := 0;
 BEGIN
   -- Authorization
   IF auth.uid() IS NULL THEN
@@ -164,7 +173,7 @@ BEGIN
 
   -- Nothing to do for NULL or empty input
   IF p_tags IS NULL OR jsonb_array_length(p_tags) = 0 THEN
-    RETURN;
+    RETURN 0;
   END IF;
 
   -- Validate required field: name must be present for every element
@@ -185,8 +194,11 @@ BEGIN
     elem->>'description'
   FROM jsonb_array_elements(p_tags) AS elem
   ON CONFLICT (user_id, name) DO NOTHING;
+  
+  -- Get the number of rows actually inserted
+  GET DIAGNOSTICS v_inserted_count = ROW_COUNT;
 
-  RETURN;
+  RETURN v_inserted_count;
 EXCEPTION
   WHEN SQLSTATE 'P0001' THEN
     RAISE;
@@ -194,3 +206,69 @@ EXCEPTION
     RAISE EXCEPTION 'insert_tags failed: %', SQLERRM;
 END;
 $$;
+
+-- Task 1.4: bulk_upload_data
+
+CREATE OR REPLACE FUNCTION public.bulk_upload_data(
+  p_payload jsonb
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_user_id uuid;
+  v_categories_inserted int := 0;
+  v_bank_accounts_inserted int := 0;
+  v_tags_inserted int := 0;
+  v_transactions_inserted int := 0;
+  v_tx_result jsonb;
+BEGIN
+  -- Authenticate caller
+  v_user_id := auth.uid();
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'bulk_upload_data: not authenticated' USING ERRCODE = '42501';
+  END IF;
+
+  -- Categories (if provided)
+  IF p_payload ? 'categories' AND p_payload->'categories' IS NOT NULL THEN
+    v_categories_inserted := public.insert_categories(v_user_id, p_payload->'categories');
+  END IF;
+
+  -- Bank accounts (if provided)
+  IF p_payload ? 'bank_accounts' AND p_payload->'bank_accounts' IS NOT NULL THEN
+    v_bank_accounts_inserted := public.insert_bank_accounts(v_user_id, p_payload->'bank_accounts');
+  END IF;
+
+  -- Tags (if provided)
+  IF p_payload ? 'tags' AND p_payload->'tags' IS NOT NULL THEN
+    v_tags_inserted := public.insert_tags(v_user_id, p_payload->'tags');
+  END IF;
+
+  -- Transactions (if provided) - delegate to existing bulk_insert_transactions
+  IF p_payload ? 'transactions' AND p_payload->'transactions' IS NOT NULL THEN
+    -- bulk_insert_transactions is SECURITY DEFINER and will itself authenticate using auth.uid()
+    v_tx_result := public.bulk_insert_transactions(p_payload->'transactions');
+    -- Extract inserted_count if present
+    IF v_tx_result IS NOT NULL AND v_tx_result ? 'inserted_count' THEN
+      v_transactions_inserted := (v_tx_result->>'inserted_count')::int;
+    END IF;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'success', true,
+    'categories_inserted', v_categories_inserted,
+    'bank_accounts_inserted', v_bank_accounts_inserted,
+    'tags_inserted', v_tags_inserted,
+    'transactions_inserted', v_transactions_inserted
+  );
+EXCEPTION
+  WHEN SQLSTATE 'P0001' THEN
+    -- validation exceptions raised by helpers - preserve them
+    RAISE;
+  WHEN others THEN
+    RAISE EXCEPTION 'bulk_upload_data failed: %', SQLERRM;
+END;
+$$;
+

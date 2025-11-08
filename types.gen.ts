@@ -448,6 +448,10 @@ export type Database = {
         Args: { p_transactions: Json }
         Returns: Json
       }
+      bulk_upload_data: {
+        Args: { p_payload: Json }
+        Returns: Json
+      }
       delete_bank_account_safe: {
         Args: { p_bank_account_id: string }
         Returns: {
@@ -471,15 +475,15 @@ export type Database = {
       }
       insert_bank_accounts: {
         Args: { p_bank_accounts: Json; p_user_id: string }
-        Returns: undefined
+        Returns: number
       }
       insert_categories: {
         Args: { p_categories: Json; p_user_id: string }
-        Returns: undefined
+        Returns: number
       }
       insert_tags: {
         Args: { p_tags: Json; p_user_id: string }
-        Returns: undefined
+        Returns: number
       }
       sum_transactions_amount: {
         Args: {
