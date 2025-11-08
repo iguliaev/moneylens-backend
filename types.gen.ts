@@ -469,6 +469,10 @@ export type Database = {
           ok: boolean
         }[]
       }
+      insert_bank_accounts: {
+        Args: { p_bank_accounts: Json; p_user_id: string }
+        Returns: undefined
+      }
       insert_categories: {
         Args: { p_categories: Json; p_user_id: string }
         Returns: undefined
