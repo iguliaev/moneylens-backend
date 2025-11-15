@@ -66,15 +66,20 @@ def parse_amount(amount_str: str) -> float:
         50.25
     """
 
-    if not amount_str:
+    cleaned_str = amount_str.replace(",", "").strip()
+    is_negative = cleaned_str.startswith("(") # Ensure negative amounts are handled correctly
+    if is_negative:
+        cleaned_str = cleaned_str.replace("(", "").replace(")", "")
+
+    if not cleaned_str:
         raise ValueError("Amount string is empty")
 
-    cleaned_str = amount_str.replace(",", "").strip()
-    if cleaned_str.startswith("("):  # Ensure negative amounts are handled correctly
-        cleaned_str = "-" + cleaned_str[1:-1]
     try:
+
         amount = float(cleaned_str)
-    except Exception as e:
+        if is_negative:
+            amount = -amount    
+    except ValueError as e:
         raise ValueError(f"Invalid amount format: {amount_str}") from e
 
     return amount
@@ -139,7 +144,7 @@ class PayloadBuilder:
         Only adds the bank account if an account with the same name doesn't already exist.
 
         Args:
-        account (BankAccount): The bank account object to add.
+            account (BankAccount): The bank account object to add.
 
         Returns:
             PayloadBuilder: Returns self to allow method chaining.
@@ -333,5 +338,9 @@ if __name__ == "__main__":
                     json_file.write(json_string)
             else:
                 print(json_string)
+    except FileNotFoundError as e:
+        print(f"Error: File not found: {e}")
+    except ValueError as e:
+        print(f"Error: Invalid data format in CSV: {e}")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"Error: An unexpected error occurred: {e}")
