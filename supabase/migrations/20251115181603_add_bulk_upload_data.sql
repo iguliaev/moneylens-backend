@@ -62,6 +62,8 @@ END;
 $function$
 ;
 
+DROP FUNCTION IF EXISTS public.insert_bank_accounts(uuid, jsonb);
+
 CREATE OR REPLACE FUNCTION public.insert_bank_accounts(p_user_id uuid, p_bank_accounts jsonb)
  RETURNS integer
  LANGUAGE plpgsql
@@ -117,6 +119,8 @@ EXCEPTION
 END;
 $function$
 ;
+
+DROP FUNCTION IF EXISTS public.insert_categories(uuid, jsonb);
 
 CREATE OR REPLACE FUNCTION public.insert_categories(p_user_id uuid, p_categories jsonb)
  RETURNS integer
@@ -199,6 +203,8 @@ END;
 $function$
 ;
 
+DROP FUNCTION IF EXISTS public.insert_tags(uuid, jsonb);
+
 CREATE OR REPLACE FUNCTION public.insert_tags(p_user_id uuid, p_tags jsonb)
  RETURNS integer
  LANGUAGE plpgsql
@@ -254,5 +260,3 @@ EXCEPTION
 END;
 $function$
 ;
-
-
