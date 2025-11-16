@@ -1,5 +1,6 @@
 import argparse
 import csv
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 import json
 from typing import Optional, TextIO
@@ -67,7 +68,9 @@ def parse_amount(amount_str: str) -> float:
     """
 
     cleaned_str = amount_str.replace(",", "").strip()
-    is_negative = cleaned_str.startswith("(") # Ensure negative amounts are handled correctly
+    is_negative = cleaned_str.startswith(
+        "("
+    )  # Ensure negative amounts are handled correctly
     if is_negative:
         cleaned_str = cleaned_str.replace("(", "").replace(")", "")
 
@@ -75,10 +78,9 @@ def parse_amount(amount_str: str) -> float:
         raise ValueError("Amount string is empty")
 
     try:
-
         amount = float(cleaned_str)
         if is_negative:
-            amount = -amount    
+            amount = -amount
     except ValueError as e:
         raise ValueError(f"Invalid amount format: {amount_str}") from e
 
@@ -208,7 +210,25 @@ class PayloadBuilder:
         )
 
 
-class SavingsConverter:
+class BaseConverter(ABC):
+    """
+    Base class for CSV converters providing a shared payload builder
+    and a common interface for converting files and retrieving payloads.
+    """
+
+    def __init__(self):
+        self.payload_builder = PayloadBuilder()
+
+    @abstractmethod
+    def convert(self, csv_file: TextIO):
+        """Parse the given CSV and populate self.payload_builder."""
+        raise NotImplementedError
+
+    def get_payload(self) -> Payload:
+        return self.payload_builder.build()
+
+
+class SavingsConverter(BaseConverter):
     """
     Converter for transforming savings account CSV files into JSON format.
 
@@ -228,7 +248,7 @@ class SavingsConverter:
     """
 
     def __init__(self, bank_account_name: str = "Savings Account"):
-        self.payload_builder = PayloadBuilder()
+        super().__init__()
         self.transaction_type = "save"
         self.bank_account = BankAccount(bank_account_name, None)
 
@@ -264,7 +284,11 @@ class SavingsConverter:
 
         skip_rows = 4  # Savings CSV has 4 header rows to skip
         for _ in range(skip_rows):
-            next(reader)
+            try:
+                next(reader)
+            except StopIteration:
+                # File shorter than expected header rows; nothing to convert.
+                return
 
         for row in reader:
             category_name = row.get("category", "").strip()
@@ -294,8 +318,214 @@ class SavingsConverter:
                     ),
                 )
 
-    def get_payload(self) -> Payload:
-        return self.payload_builder.build()
+    # Inherit get_payload from BaseConverter
+
+
+def parse_transaction_bank_account(code: str) -> BankAccount:
+    """
+    Parse a bank account code and return the corresponding BankAccount object.
+
+    Args:
+        code (str): A single character code representing a bank account.
+                    Valid codes are:
+                    - "" (empty string): NatWest
+                    - "B": Barclays
+                    - "W": Wise Virtual Card
+                    - "X": AmEx
+                    - "M": Monzo
+                    - "A": Wise Virtual Card
+
+    Returns:
+        BankAccount: A BankAccount object with the corresponding bank name and None as description.
+
+    Raises:
+        ValueError: If the provided code is not found in the mapping.
+    """
+
+    mapping = {
+        "": "NatWest",
+        "B": "Barclays",
+        "W": "Wise Virtual Card",
+        "X": "AmEx",
+        "M": "Monzo",
+        "A": "Wise Virtual Card",
+    }
+
+    bank_account_name = mapping.get(code)
+    if not bank_account_name:
+        raise ValueError(f"Unknown bank account code: {code}")
+
+    return BankAccount(name=bank_account_name, description=None)
+
+
+def parse_transaction_tags(tags: str) -> Optional[list[str]]:
+    """
+    Parse transaction tags from a string input.
+
+    Args:
+        tags (str): A string containing transaction tags.
+
+    Returns:
+        Optional[list[str]]: A list containing the tag string if tags is non-empty after stripping whitespace,
+                            otherwise None.
+
+    Examples:
+        >>> parse_transaction_tags("  groceries  ")
+        ['groceries']
+        >>> parse_transaction_tags("")
+        None
+        >>> parse_transaction_tags("   ")
+        None
+    """
+    tags = tags.strip()
+    return [tags] if tags else None
+
+
+class TransactionConverter(BaseConverter):
+    """
+    A converter class for processing CSV files containing transaction data.
+
+    This class extends BaseConverter to handle the conversion of CSV files with a specific
+    format that includes both spending and earning transactions. The CSV file is expected
+    to have a particular structure with earnings data in the first columns and spending
+    data in the later columns.
+
+    Expected CSV Structure:
+        - Row 1: Contains the earning date in the 'earn_date' field
+        - Rows 2-13: Spending transactions with date, category, amount, bank account, and tags
+        - Rows 14+: Earning transactions with category and amount
+
+    Attributes:
+        Inherits all attributes from BaseConverter, including payload_builder for
+        constructing the output payload.
+
+    Methods:
+        convert(csv_file: TextIO) -> None:
+            Processes the CSV file and extracts both spending and earning transactions.
+            Populates the payload builder with categories, bank accounts, and transactions.
+
+    Example:
+        >>> converter = TransactionConverter()
+        >>> with open('transactions.csv', 'r') as f:
+        ...     converter.convert(f)
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def convert(self, csv_file: TextIO):
+        """
+        Convert a CSV file into structured transaction data.
+
+        This method reads a CSV file with a specific format containing both spending and earning
+        transactions, and uses a payload builder to structure the data into categories, bank accounts,
+        and transactions.
+
+        Args:
+            csv_file (TextIO): A text file object containing CSV data with the following columns:
+                - earn_category: Category name for earning transactions
+                - earn_amount: Amount for earning transactions
+                - skip1: Unused column
+                - earn_date: Date for earning transactions
+                - skip2: Unused column
+                - date: Date for spending transactions
+                - category: Category name for spending transactions
+                - amount: Amount for spending transactions
+                - bank_account: Bank account for spending transactions
+                - tags: Tags for spending transactions
+
+        Returns:
+            None: The method populates the payload_builder with categories, bank accounts,
+            and transactions but does not return a value.
+
+        Notes:
+            - Row 1 contains the earning date
+            - Rows 2-13 contain spending transactions
+            - Rows 14+ contain earning transactions
+            - All earning transactions use "Barclays" as the default bank account
+            - Empty rows (missing date, category, or amount) are skipped
+        """
+
+        fieldnames = [
+            "earn_category",
+            "earn_amount",
+            "skip1",
+            "earn_date",
+            "skip2",
+            "date",
+            "category",
+            "amount",
+            "bank_account",
+            "tags",
+        ]
+
+        reader = csv.DictReader(csv_file, fieldnames=fieldnames)
+
+        earn_date_row = 1
+        spend_transactions_start_row = 2
+        earn_transactions_start_row = 14  # Earnings records start
+        earn_bank_account = "Barclays"
+
+        earn_date = None
+        for idx, row in enumerate(reader):
+            if idx == earn_date_row:
+                earn_date = row.get("earn_date", "").strip()
+            if idx >= spend_transactions_start_row:
+                spend_date = row.get("date", "").strip()
+                spend_category = row.get("category", "").strip()
+                spend_amount = row.get("amount", "").strip()
+
+                if spend_date and spend_category and spend_amount:
+                    spend_bank_account = parse_transaction_bank_account(
+                        row.get("bank_account", "").strip()
+                    )
+                    self.payload_builder.add_category(
+                        Category(
+                            type="spend",
+                            name=spend_category,
+                            description=None,
+                        ),
+                    ).add_bank_account(
+                        spend_bank_account,
+                    ).add_transaction(
+                        Transaction(
+                            date=spend_date,
+                            type="spend",
+                            category=spend_category,
+                            bank_account=spend_bank_account.name,
+                            amount=parse_amount(spend_amount),
+                            tags=parse_transaction_tags(row.get("tags", "").strip()),
+                            notes=None,
+                        ),
+                    )
+
+            if idx >= earn_transactions_start_row:
+                earn_category = row.get("earn_category", "").strip()
+                earn_amount = row.get("earn_amount", "").strip()
+
+                if earn_category and earn_amount:
+                    self.payload_builder.add_category(
+                        Category(
+                            type="earn",
+                            name=earn_category,
+                            description=None,
+                        ),
+                    ).add_bank_account(
+                        BankAccount(
+                            name=earn_bank_account,
+                            description=None,
+                        ),
+                    ).add_transaction(
+                        Transaction(
+                            date=earn_date,
+                            type="earn",
+                            category=earn_category,
+                            bank_account=earn_bank_account,
+                            amount=parse_amount(earn_amount),
+                            tags=None,
+                            notes=None,
+                        ),
+                    )
 
 
 def exclude_if_none_factory(value):
@@ -318,26 +548,42 @@ def exclude_if_none_factory(value):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Convert CSV to JSON")
     parser.add_argument(
-        "-i", "--input", required=True, help="Path to the input CSV file"
+        "-i",
+        "--input",
+        required=True,
+        nargs="+",
+        help="Path(s) to input CSV file(s)",
     )
     parser.add_argument("-o", "--output", help="Path to the output JSON file")
+    parser.add_argument(
+        "-t",
+        "--type",
+        required=True,
+        choices=["savings", "transactions"],
+        help="Type of CSV to convert",
+    )
     args = parser.parse_args()
 
-    converter = SavingsConverter()
+    if args.type == "transactions":
+        converter = TransactionConverter()
+    else:
+        converter = SavingsConverter()
 
     try:
-        with open(args.input, mode="r", encoding="utf-8") as csv_file:
-            converter.convert(csv_file)
-            payload = converter.get_payload()
-            json_string = json.dumps(
-                asdict(payload, dict_factory=exclude_if_none_factory),
-                indent=2,
-            )
-            if args.output:
-                with open(args.output, mode="w", encoding="utf-8") as json_file:
-                    json_file.write(json_string)
-            else:
-                print(json_string)
+        for input_path in args.input:
+            with open(input_path, mode="r", encoding="utf-8") as csv_file:
+                converter.convert(csv_file)
+
+        payload = converter.get_payload()
+        json_string = json.dumps(
+            asdict(payload, dict_factory=exclude_if_none_factory),
+            indent=2,
+        )
+        if args.output:
+            with open(args.output, mode="w", encoding="utf-8") as json_file:
+                json_file.write(json_string)
+        else:
+            print(json_string)
     except FileNotFoundError as e:
         print(f"Error: File not found: {e}")
     except ValueError as e:
