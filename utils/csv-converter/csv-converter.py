@@ -323,10 +323,23 @@ class SavingsConverter(BaseConverter):
 
 def parse_transaction_bank_account(code: str) -> BankAccount:
     """
-    Map a short bank account code to a full bank account name.
+    Parse a bank account code and return the corresponding BankAccount object.
 
     Args:
-        code (str): The bank account code from the CSV (e.g., "B", "W").
+        code (str): A single character code representing a bank account.
+                    Valid codes are:
+                    - "" (empty string): NatWest
+                    - "B": Barclays
+                    - "W": Wise Virtual Card
+                    - "X": AmEx
+                    - "M": Monzo
+                    - "A": Wise Virtual Card
+
+    Returns:
+        BankAccount: A BankAccount object with the corresponding bank name and None as description.
+
+    Raises:
+        ValueError: If the provided code is not found in the mapping.
     """
 
     mapping = {
@@ -346,21 +359,92 @@ def parse_transaction_bank_account(code: str) -> BankAccount:
 
 
 def parse_transaction_tags(tags: str) -> Optional[list[str]]:
+    """
+    Parse transaction tags from a string input.
+
+    Args:
+        tags (str): A string containing transaction tags.
+
+    Returns:
+        Optional[list[str]]: A list containing the tag string if tags is non-empty after stripping whitespace,
+                            otherwise None.
+
+    Examples:
+        >>> parse_transaction_tags("  groceries  ")
+        ['groceries']
+        >>> parse_transaction_tags("")
+        None
+        >>> parse_transaction_tags("   ")
+        None
+    """
     tags = tags.strip()
     return [tags] if tags else None
 
 
 class TransactionConverter(BaseConverter):
     """
-    Converter for general transactions CSV files. Extend this implementation to
-    support your specific CSV schema (columns, header rows to skip, etc.).
+    A converter class for processing CSV files containing transaction data.
+
+    This class extends BaseConverter to handle the conversion of CSV files with a specific
+    format that includes both spending and earning transactions. The CSV file is expected
+    to have a particular structure with earnings data in the first columns and spending
+    data in the later columns.
+
+    Expected CSV Structure:
+        - Row 1: Contains the earning date in the 'earn_date' field
+        - Rows 2-13: Spending transactions with date, category, amount, bank account, and tags
+        - Rows 14+: Earning transactions with category and amount
+
+    Attributes:
+        Inherits all attributes from BaseConverter, including payload_builder for
+        constructing the output payload.
+
+    Methods:
+        convert(csv_file: TextIO) -> None:
+            Processes the CSV file and extracts both spending and earning transactions.
+            Populates the payload builder with categories, bank accounts, and transactions.
+
+    Example:
+        >>> converter = TransactionConverter()
+        >>> with open('transactions.csv', 'r') as f:
+        ...     converter.convert(f)
     """
 
     def __init__(self):
         super().__init__()
 
     def convert(self, csv_file: TextIO):
-        """Parse the CSV and populate self.payload_builder. To be implemented."""
+        """
+        Convert a CSV file into structured transaction data.
+
+        This method reads a CSV file with a specific format containing both spending and earning
+        transactions, and uses a payload builder to structure the data into categories, bank accounts,
+        and transactions.
+
+        Args:
+            csv_file (TextIO): A text file object containing CSV data with the following columns:
+                - earn_category: Category name for earning transactions
+                - earn_amount: Amount for earning transactions
+                - skip1: Unused column
+                - earn_date: Date for earning transactions
+                - skip2: Unused column
+                - date: Date for spending transactions
+                - category: Category name for spending transactions
+                - amount: Amount for spending transactions
+                - bank_account: Bank account for spending transactions
+                - tags: Tags for spending transactions
+
+        Returns:
+            None: The method populates the payload_builder with categories, bank accounts,
+            and transactions but does not return a value.
+
+        Notes:
+            - Row 1 contains the earning date
+            - Rows 2-13 contain spending transactions
+            - Rows 14+ contain earning transactions
+            - All earning transactions use "Barclays" as the default bank account
+            - Empty rows (missing date, category, or amount) are skipped
+        """
 
         fieldnames = [
             "earn_category",
@@ -423,7 +507,7 @@ class TransactionConverter(BaseConverter):
                     self.payload_builder.add_category(
                         Category(
                             type="earn",
-                            name=row.get("earn_category", "").strip(),
+                            name=earn_category,
                             description=None,
                         ),
                     ).add_bank_account(
@@ -435,9 +519,9 @@ class TransactionConverter(BaseConverter):
                         Transaction(
                             date=earn_date,
                             type="earn",
-                            category=row.get("earn_category", "").strip(),
+                            category=earn_category,
                             bank_account=earn_bank_account,
-                            amount=parse_amount(row.get("earn_amount", "").strip()),
+                            amount=parse_amount(earn_amount),
                             tags=None,
                             notes=None,
                         ),
