@@ -398,7 +398,8 @@ def parse_transaction_tags(tags: str) -> Optional[list[str]]:
         None
     """
     tags = [tag.strip() for tag in tags.split(",")]
-    return tags if any(tags) else None
+    tags = [tag for tag in tags if tag]
+    return tags if tags else None
 
 
 class TransactionConverter(BaseConverter):
