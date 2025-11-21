@@ -393,7 +393,7 @@ def parse_transaction_tags(tags: str) -> Optional[list[str]]:
         >>> parse_transaction_tags("  groceries  ")
         ['groceries']
         >>> parse_transaction_tags("tag1, tag2")
-        ['tag1, tag2']
+        ['tag1', 'tag2']
         >>> parse_transaction_tags("   ")
         None
     """
