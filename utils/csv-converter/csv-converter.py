@@ -175,6 +175,26 @@ class PayloadBuilder:
             self.tags.append(tag)
         return self
 
+    def add_tags(self, tags: list[str]) -> "PayloadBuilder":
+        """
+        Add multiple tags to the payload.
+
+        Only adds tags that do not already exist in the payload.
+
+        Args:
+            tags (list[str]): A list of tag names to add.
+
+        Returns:
+            PayloadBuilder: Returns self to allow method chaining.
+        """
+
+        for tag_name in tags:
+            if tag_name not in self.tag_names:
+                self.tag_names.add(tag_name)
+                self.tags.append(Tag(name=tag_name, description=None))
+
+        return self
+
     def add_transaction(self, transaction: Transaction) -> "PayloadBuilder":
         """
         Add a transaction to the payload.
@@ -372,13 +392,14 @@ def parse_transaction_tags(tags: str) -> Optional[list[str]]:
     Examples:
         >>> parse_transaction_tags("  groceries  ")
         ['groceries']
-        >>> parse_transaction_tags("")
-        None
+        >>> parse_transaction_tags("tag1, tag2")
+        ['tag1', 'tag2']
         >>> parse_transaction_tags("   ")
         None
     """
-    tags = tags.strip()
-    return [tags] if tags else None
+    tags = [tag.strip() for tag in tags.split(",")]
+    tags = [tag for tag in tags if tag]
+    return tags if tags else None
 
 
 class TransactionConverter(BaseConverter):
@@ -474,7 +495,7 @@ class TransactionConverter(BaseConverter):
                 spend_date = row.get("date", "").strip()
                 spend_category = row.get("category", "").strip()
                 spend_amount = row.get("amount", "").strip()
-
+                spend_tags = parse_transaction_tags(row.get("tags", "").strip())
                 if spend_date and spend_category and spend_amount:
                     spend_bank_account = parse_transaction_bank_account(
                         row.get("bank_account", "").strip()
@@ -487,6 +508,8 @@ class TransactionConverter(BaseConverter):
                         ),
                     ).add_bank_account(
                         spend_bank_account,
+                    ).add_tags(
+                        spend_tags if spend_tags else []
                     ).add_transaction(
                         Transaction(
                             date=spend_date,
@@ -494,7 +517,7 @@ class TransactionConverter(BaseConverter):
                             category=spend_category,
                             bank_account=spend_bank_account.name,
                             amount=parse_amount(spend_amount),
-                            tags=parse_transaction_tags(row.get("tags", "").strip()),
+                            tags=spend_tags,
                             notes=None,
                         ),
                     )
