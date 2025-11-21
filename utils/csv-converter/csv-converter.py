@@ -182,7 +182,7 @@ class PayloadBuilder:
         Only adds tags that do not already exist in the payload.
 
         Args:
-            tags (list[Tag]): A list of tag objects to add.
+            tags (list[str]): A list of tag names to add.
 
         Returns:
             PayloadBuilder: Returns self to allow method chaining.
