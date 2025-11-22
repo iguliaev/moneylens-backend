@@ -282,7 +282,7 @@ class SavingsConverter(BaseConverter):
         fieldnames = ["skip1", "skip2", "date", "amount", "category", "notes"]
         reader = csv.DictReader(csv_file, fieldnames=fieldnames)
 
-        skip_rows = 4  # Savings CSV has 4 header rows to skip
+        skip_rows = 2  # Savings CSV has 4 header rows to skip
         for _ in range(skip_rows):
             try:
                 next(reader)
@@ -297,6 +297,8 @@ class SavingsConverter(BaseConverter):
             notes = row.get("notes", "").strip()
             notes = notes if notes else None
 
+            if not category_name:
+                category_name = "Savings"
             if category_name and date:
                 self.payload_builder.add_category(
                     Category(
