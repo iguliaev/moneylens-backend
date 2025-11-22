@@ -276,7 +276,7 @@ class SavingsConverter(BaseConverter):
         """
         Convert CSV file data into structured transactions.
 
-        This method reads a CSV file containing transaction data, skips the first 4 header rows,
+        This method reads a CSV file containing transaction data, skips the first 2 header rows,
         and processes each subsequent row to extract transaction information. For each valid row,
         it creates Category and Transaction objects and adds them to the payload builder.
 
@@ -293,7 +293,7 @@ class SavingsConverter(BaseConverter):
             None: This method modifies the payload_builder in place and does not return a value.
 
         Note:
-            - The CSV file is expected to have 4 header rows that are skipped during processing.
+            - The CSV file is expected to have 2 header rows that are skipped during processing.
             - Only rows with non-empty category_name, date, and amount are processed.
             - The amount is parsed using the parse_amount utility function.
             - All string fields are stripped of leading/trailing whitespace.
@@ -302,7 +302,7 @@ class SavingsConverter(BaseConverter):
         fieldnames = ["skip1", "skip2", "date", "amount", "category", "notes"]
         reader = csv.DictReader(csv_file, fieldnames=fieldnames)
 
-        skip_rows = 4  # Savings CSV has 4 header rows to skip
+        skip_rows = 2  # Savings CSV has 2 header rows to skip
         for _ in range(skip_rows):
             try:
                 next(reader)
@@ -317,6 +317,8 @@ class SavingsConverter(BaseConverter):
             notes = row.get("notes", "").strip()
             notes = notes if notes else None
 
+            if not category_name:
+                category_name = "Savings"
             if category_name and date:
                 self.payload_builder.add_category(
                     Category(
