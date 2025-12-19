@@ -16,6 +16,7 @@ DECLARE
   v_tx jsonb;
   v_category_id uuid;
   v_bank_account_id uuid;
+  v_tx_id uuid;
   v_inserted_count integer := 0;
   v_errors jsonb := '[]'::jsonb;
   v_idx integer := 0;
@@ -160,9 +161,21 @@ BEGIN
         (v_tx->>'amount')::numeric,
         CASE WHEN v_tx->'tags' IS NOT NULL THEN (SELECT array_agg(value::text) FROM jsonb_array_elements_text(v_tx->'tags')) ELSE NULL END,
         v_tx->>'notes'
-      );
+      )
+      RETURNING id INTO v_tx_id;
 
       v_inserted_count := v_inserted_count + 1;
+
+      -- Insert tag associations into transaction_tags (map tag names -> tag ids)
+      IF v_tx->'tags' IS NOT NULL THEN
+        INSERT INTO public.transaction_tags (transaction_id, tag_id)
+        SELECT DISTINCT
+          v_tx_id,
+          tg.id
+        FROM jsonb_array_elements_text(v_tx->'tags') AS jt(tag_name)
+        JOIN public.tags tg ON tg.user_id = v_user_id AND tg.name = jt.tag_name
+        ON CONFLICT (transaction_id, tag_id) DO NOTHING;
+      END IF;
 
     EXCEPTION WHEN OTHERS THEN
       v_errors := v_errors || jsonb_build_object(
