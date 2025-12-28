@@ -49,23 +49,35 @@ WITH
     INSERT INTO categories (id, user_id, type, name, description, created_at, updated_at)
     VALUES (gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), 'save', 'vacation', 'Vacation', now(), now())
     RETURNING id
+  ),
+  txn_data AS (
+    INSERT INTO transactions (id, user_id, date, type, category_id, amount, notes, bank_account)
+    (
+    SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-01'::date, 'spend'::transaction_type, cat_food_user1.id, 100.00, 'Lunch', 'Test Bank' FROM cat_food_user1
+    UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-02'::date, 'spend'::transaction_type, cat_food_user1.id, 50.00, 'Dinner', 'Test Bank' FROM cat_food_user1
+    UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-03'::date, 'earn'::transaction_type, cat_salary_user1.id, 1000.00, 'August Salary', 'Test Bank' FROM cat_salary_user1
+    UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-04'::date, 'save'::transaction_type, cat_vacation_user1.id, 150.00, 'Vacation', 'Test Bank' FROM cat_vacation_user1
+    UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-07-01'::date, 'spend'::transaction_type, cat_food_user1.id, 100.00, 'Lunch', 'Test Bank' FROM cat_food_user1
+    UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-06-02'::date, 'spend'::transaction_type, cat_food_user1.id, 50.00, 'Dinner', 'Test Bank' FROM cat_food_user1
+    UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-05-03'::date, 'earn'::transaction_type, cat_salary_user1.id, 1000.00, 'August Salary', 'Test Bank' FROM cat_salary_user1
+    UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-04-03'::date, 'earn'::transaction_type, cat_salary_user1.id, 1000.00, 'May Salary', 'Test Bank' FROM cat_salary_user1
+    UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-04-04'::date, 'save'::transaction_type, cat_vacation_user1.id, 150.00, 'Vacation', 'Test Bank' FROM cat_vacation_user1
+    UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-01'::date, 'spend'::transaction_type, cat_food_user2.id, 200.00, 'Lunch', 'Test Bank' FROM cat_food_user2
+    UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-02'::date, 'spend'::transaction_type, cat_food_user2.id, 100.00, 'Dinner', 'Test Bank' FROM cat_food_user2
+    UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-03'::date, 'earn'::transaction_type, cat_salary_user2.id, 2000.00, 'August Salary', 'Test Bank' FROM cat_salary_user2
+    UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-04'::date, 'save'::transaction_type, cat_vacation_user2.id, 150.00, 'Vacation', 'Test Bank' FROM cat_vacation_user2
+    )
+    RETURNING id, user_id, notes
   )
-INSERT INTO transactions (id, user_id, date, type, category_id, amount, tags, notes, bank_account)
-(
-SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-01'::date, 'spend'::transaction_type, cat_food_user1.id, 100.00, array['groceries'], 'Lunch', 'Test Bank' FROM cat_food_user1
-UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-02'::date, 'spend'::transaction_type, cat_food_user1.id, 50.00, array['groceries'], 'Dinner', 'Test Bank' FROM cat_food_user1
-UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-03'::date, 'earn'::transaction_type, cat_salary_user1.id, 1000.00, array['salary'], 'August Salary', 'Test Bank' FROM cat_salary_user1
-UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-08-04'::date, 'save'::transaction_type, cat_vacation_user1.id, 150.00, array['groceries'], 'Vacation', 'Test Bank' FROM cat_vacation_user1
-UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-07-01'::date, 'spend'::transaction_type, cat_food_user1.id, 100.00, array['groceries'], 'Lunch', 'Test Bank' FROM cat_food_user1
-UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-06-02'::date, 'spend'::transaction_type, cat_food_user1.id, 50.00, array['groceries'], 'Dinner', 'Test Bank' FROM cat_food_user1
-UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-05-03'::date, 'earn'::transaction_type, cat_salary_user1.id, 1000.00, array['salary'], 'August Salary', 'Test Bank' FROM cat_salary_user1
-UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-04-03'::date, 'earn'::transaction_type, cat_salary_user1.id, 1000.00, array['salary'], 'May Salary', 'Test Bank' FROM cat_salary_user1
-UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user1@test.com'), '2025-04-04'::date, 'save'::transaction_type, cat_vacation_user1.id, 150.00, array['groceries'], 'Vacation', 'Test Bank' FROM cat_vacation_user1
-UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-01'::date, 'spend'::transaction_type, cat_food_user2.id, 200.00, array['groceries'], 'Lunch', 'Test Bank' FROM cat_food_user2
-UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-02'::date, 'spend'::transaction_type, cat_food_user2.id, 100.00, array['groceries'], 'Dinner', 'Test Bank' FROM cat_food_user2
-UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-03'::date, 'earn'::transaction_type, cat_salary_user2.id, 2000.00, array['salary'], 'August Salary', 'Test Bank' FROM cat_salary_user2
-UNION ALL SELECT gen_random_uuid(), tests.get_supabase_uid('user2@test.com'), '2025-08-04'::date, 'save'::transaction_type, cat_vacation_user2.id, 150.00, array['groceries'], 'Vacation', 'Test Bank' FROM cat_vacation_user2
-);
+INSERT INTO transaction_tags (transaction_id, tag_id)
+SELECT 
+  t.id,
+  tag.id
+FROM txn_data t
+JOIN tags tag ON tag.user_id = t.user_id
+WHERE 
+  (t.notes LIKE '%Lunch%' OR t.notes LIKE '%Dinner%' OR t.notes LIKE '%Vacation%') AND tag.name = 'groceries'
+  OR (t.notes LIKE '%Salary%') AND tag.name = 'salary';
 
 
 -- as User 1
