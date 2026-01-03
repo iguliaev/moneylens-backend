@@ -15,15 +15,11 @@ export const supabaseAdmin = createClient<Database>(
 );
 
 export function e2eCurrentMonthDate(dayOfMonth = 15): string {
-  // Use a stable day inside the current month to avoid month-boundary flakiness.
+  // Use UTC + a stable day inside the month to avoid timezone + month-boundary flakiness.
   const date = new Date();
-  date.setHours(12, 0, 0, 0);
-  date.setDate(dayOfMonth);
-
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  date.setUTCHours(12, 0, 0, 0);
+  date.setUTCDate(dayOfMonth);
+  return date.toISOString().slice(0, 10);
 }
 
 export async function createTestUser(seed?: string) {
