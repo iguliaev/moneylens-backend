@@ -29,6 +29,8 @@ export default defineConfig({
   ],
   use: {
     baseURL: process.env.BASE_URL || "http://localhost:3000",
+    // Keep date computations deterministic across machines/CI.
+    timezoneId: "UTC",
     extraHTTPHeaders: {
       "x-vercel-protection-bypass":
         process.env.VERCEL_AUTOMATION_BYPASS_SECRET || "",

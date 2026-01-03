@@ -14,6 +14,14 @@ export const supabaseAdmin = createClient<Database>(
   { auth: { persistSession: false } },
 );
 
+export function e2eCurrentMonthDate(dayOfMonth = 15): string {
+  // Use UTC + a stable day inside the month to avoid timezone + month-boundary flakiness.
+  const date = new Date();
+  date.setUTCHours(12, 0, 0, 0);
+  date.setUTCDate(dayOfMonth);
+  return date.toISOString().slice(0, 10);
+}
+
 export async function createTestUser(seed?: string) {
   const email = seed
     ? `test-${seed}-${Date.now()}@example.com`
@@ -234,6 +242,7 @@ export async function seedTransactionsForUser(
   prefix: string, // e.g., "userA" or "userB" to make data identifiable
 ) {
   const now = new Date().toISOString();
+  const dateForCurrentMonth = e2eCurrentMonthDate();
 
   // Get category IDs for the user
   const { data: categories, error: catQueryError } = await supabaseAdmin
@@ -263,7 +272,7 @@ export async function seedTransactionsForUser(
   const transactions = [
     {
       user_id: userId,
-      date: new Date().toISOString().slice(0, 10), // Current month for dashboard visibility
+      date: dateForCurrentMonth,
       type: "spend" as const,
       amount: 100.0,
       category: spendCat?.name || "Groceries",
@@ -274,7 +283,7 @@ export async function seedTransactionsForUser(
     },
     {
       user_id: userId,
-      date: new Date().toISOString().slice(0, 10),
+      date: dateForCurrentMonth,
       type: "earn" as const,
       amount: 500.0,
       category: earnCat?.name || "Salary",
@@ -285,7 +294,7 @@ export async function seedTransactionsForUser(
     },
     {
       user_id: userId,
-      date: new Date().toISOString().slice(0, 10),
+      date: dateForCurrentMonth,
       type: "save" as const,
       amount: 200.0,
       category: saveCat?.name || "Savings",

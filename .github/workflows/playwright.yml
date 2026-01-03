@@ -1,5 +1,9 @@
 name: E2E Tests on Preview
 
+defaults:
+  run:
+    working-directory: apps/web
+
 on:
   deployment_status:
 
@@ -38,7 +42,7 @@ jobs:
         VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         BASE_URL: ${{ steps.deployment.outputs.url }}
         NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_KEY }}
         SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       run: npm run test:e2e
       

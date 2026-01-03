@@ -6,6 +6,7 @@ import {
   seedReferenceDataForUser,
   cleanupReferenceDataForUser,
   supabaseAdmin,
+  e2eCurrentMonthDate,
 } from "../utils/test-helpers";
 
 test.describe("Data Reset", () => {
@@ -36,10 +37,12 @@ test.describe("Data Reset", () => {
     const earnCat = categories?.find((c: any) => c.type === "earn");
     const saveCat = categories?.find((c: any) => c.type === "save");
 
+    const date = e2eCurrentMonthDate();
+
     await supabaseAdmin.from("transactions").insert([
       {
         user_id: testUser.userId,
-        date: "2025-12-20",
+        date,
         type: "spend",
         amount: 50.0,
         category: "Groceries",
@@ -50,7 +53,7 @@ test.describe("Data Reset", () => {
       },
       {
         user_id: testUser.userId,
-        date: "2025-12-20",
+        date,
         type: "earn",
         amount: 1000.0,
         category: "Salary",
@@ -61,7 +64,7 @@ test.describe("Data Reset", () => {
       },
       {
         user_id: testUser.userId,
-        date: "2025-12-20",
+        date,
         type: "save",
         amount: 200.0,
         category: "Savings",
