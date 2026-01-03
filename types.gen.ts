@@ -118,6 +118,70 @@ export type Database = {
         }
         Relationships: []
       }
+      transaction_tags: {
+        Row: {
+          created_at: string
+          id: string
+          tag_id: string
+          transaction_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          tag_id: string
+          transaction_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          tag_id?: string
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transaction_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags_with_usage"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_tags_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_tags_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions_earn"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_tags_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions_save"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transaction_tags_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions_spend"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -448,6 +512,7 @@ export type Database = {
         Args: { p_transactions: Json }
         Returns: Json
       }
+      bulk_upload_data: { Args: { p_payload: Json }; Returns: Json }
       delete_bank_account_safe: {
         Args: { p_bank_account_id: string }
         Returns: {
@@ -468,6 +533,27 @@ export type Database = {
           in_use_count: number
           ok: boolean
         }[]
+      }
+      get_transaction_tags: {
+        Args: { p_transaction_id: string }
+        Returns: Json
+      }
+      insert_bank_accounts: {
+        Args: { p_bank_accounts: Json; p_user_id: string }
+        Returns: number
+      }
+      insert_categories: {
+        Args: { p_categories: Json; p_user_id: string }
+        Returns: number
+      }
+      insert_tags: {
+        Args: { p_tags: Json; p_user_id: string }
+        Returns: number
+      }
+      reset_user_data: { Args: never; Returns: Json }
+      set_transaction_tags: {
+        Args: { p_tag_ids: string[]; p_transaction_id: string }
+        Returns: undefined
       }
       sum_transactions_amount: {
         Args: {
