@@ -5,8 +5,11 @@ import {
   loginUser,
   cleanupReferenceDataForUser,
   logoutUser,
+  e2eCurrentMonthDate,
 } from "../utils/test-helpers";
 import * as path from "path";
+import * as fs from "fs";
+import { Buffer } from "buffer";
 
 test.describe("Bulk Upload Data Isolation", () => {
   let userA: { email: string; password: string; userId: string };
@@ -31,8 +34,22 @@ test.describe("Bulk Upload Data Isolation", () => {
     await loginUser(page, userA.email, userA.password);
     await page.goto("/settings");
 
-    const filePath = path.join(__dirname, "../fixtures/valid-bulk-upload.json");
-    await page.getByTestId("bulk-upload-input").setInputFiles(filePath);
+    const date = e2eCurrentMonthDate();
+    const fixturePath = path.join(__dirname, "../fixtures/valid-bulk-upload.json");
+    const fixtureJson = JSON.parse(fs.readFileSync(fixturePath, "utf8"));
+    if (Array.isArray(fixtureJson.transactions)) {
+      fixtureJson.transactions = fixtureJson.transactions.map((t: any) => ({
+        ...t,
+        date,
+      }));
+    }
+    const buffer = Buffer.from(JSON.stringify(fixtureJson), "utf8");
+
+    await page.getByTestId("bulk-upload-input").setInputFiles({
+      name: "valid-bulk-upload.json",
+      mimeType: "application/json",
+      buffer,
+    });
     await expect(page.getByTestId("bulk-upload-preview")).toBeVisible();
     await page.getByTestId("bulk-upload-submit").click();
     await expect(page.getByTestId("bulk-upload-success")).toBeVisible();

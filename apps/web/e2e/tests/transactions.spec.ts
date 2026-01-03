@@ -6,6 +6,7 @@ import {
   seedReferenceDataForUser,
   cleanupReferenceDataForUser,
   cleanupTransactionsForUser,
+  e2eCurrentMonthDate,
 } from "../utils/test-helpers";
 
 test.describe("Transactions", () => {
@@ -34,10 +35,11 @@ test.describe("Transactions", () => {
   });
 
   test("user can create spend transaction", async ({ page }) => {
+    const date = e2eCurrentMonthDate();
     await page.goto("/spend");
 
     await page.getByTestId("spend-form-amount").fill("50.00");
-    await page.getByTestId("spend-form-date").fill("2025-12-20");
+    await page.getByTestId("spend-form-date").fill(date);
     await page.getByTestId("spend-form-notes").fill("Test spend transaction");
 
     // Select category (adjust selector to match your UI)
@@ -68,10 +70,11 @@ test.describe("Transactions", () => {
   });
 
   test("user can create earn transaction", async ({ page }) => {
+    const date = e2eCurrentMonthDate();
     await page.goto("/earn");
 
     await page.getByTestId("earn-form-amount").fill("1000.00");
-    await page.getByTestId("earn-form-date").fill("2025-12-20");
+    await page.getByTestId("earn-form-date").fill(date);
     await page.getByTestId("earn-form-notes").fill("Test salary");
 
     // Select category
@@ -102,10 +105,11 @@ test.describe("Transactions", () => {
   });
 
   test("user can create save transaction", async ({ page }) => {
+    const date = e2eCurrentMonthDate();
     await page.goto("/save");
 
     await page.getByTestId("save-form-amount").fill("200.00");
-    await page.getByTestId("save-form-date").fill("2025-12-20");
+    await page.getByTestId("save-form-date").fill(date);
     await page.getByTestId("save-form-notes").fill("Emergency fund");
 
     // Select category
@@ -136,11 +140,12 @@ test.describe("Transactions", () => {
   });
 
   test("user can edit spend transaction", async ({ page }) => {
+    const date = e2eCurrentMonthDate();
     // First create a transaction
     await page.goto("/spend");
 
     await page.getByTestId("spend-form-amount").fill("100.00");
-    await page.getByTestId("spend-form-date").fill("2025-12-20");
+    await page.getByTestId("spend-form-date").fill(date);
     await page.getByTestId("spend-form-notes").fill("Original transaction");
     await page
       .getByTestId("spend-form-category")
@@ -184,10 +189,11 @@ test.describe("Transactions", () => {
   });
 
   test("user can delete spend transaction", async ({ page }) => {
+    const date = e2eCurrentMonthDate();
     await page.goto("/spend");
 
     await page.getByTestId("spend-form-amount").fill("75.00");
-    await page.getByTestId("spend-form-date").fill("2025-12-20");
+    await page.getByTestId("spend-form-date").fill(date);
     await page.getByTestId("spend-form-notes").fill("To be deleted");
     await page
       .getByTestId("spend-form-category")
@@ -217,11 +223,12 @@ test.describe("Transactions", () => {
   });
 
   test("user can edit earn transaction", async ({ page }) => {
+    const date = e2eCurrentMonthDate();
     // First create a transaction
     await page.goto("/earn");
 
     await page.getByTestId("earn-form-amount").fill("500.00");
-    await page.getByTestId("earn-form-date").fill("2025-12-20");
+    await page.getByTestId("earn-form-date").fill(date);
     await page.getByTestId("earn-form-notes").fill("Original earn");
     await page
       .getByTestId("earn-form-category")
@@ -259,10 +266,11 @@ test.describe("Transactions", () => {
   });
 
   test("user can delete earn transaction", async ({ page }) => {
+    const date = e2eCurrentMonthDate();
     await page.goto("/earn");
 
     await page.getByTestId("earn-form-amount").fill("300.00");
-    await page.getByTestId("earn-form-date").fill("2025-12-20");
+    await page.getByTestId("earn-form-date").fill(date);
     await page.getByTestId("earn-form-notes").fill("Earn to be deleted");
     await page
       .getByTestId("earn-form-category")
@@ -294,11 +302,12 @@ test.describe("Transactions", () => {
   });
 
   test("user can edit save transaction", async ({ page }) => {
+    const date = e2eCurrentMonthDate();
     // First create a transaction
     await page.goto("/save");
 
     await page.getByTestId("save-form-amount").fill("100.00");
-    await page.getByTestId("save-form-date").fill("2025-12-20");
+    await page.getByTestId("save-form-date").fill(date);
     await page.getByTestId("save-form-notes").fill("Original save");
     await page
       .getByTestId("save-form-category")
@@ -336,10 +345,11 @@ test.describe("Transactions", () => {
   });
 
   test("user can delete save transaction", async ({ page }) => {
+    const date = e2eCurrentMonthDate();
     await page.goto("/save");
 
     await page.getByTestId("save-form-amount").fill("150.00");
-    await page.getByTestId("save-form-date").fill("2025-12-20");
+    await page.getByTestId("save-form-date").fill(date);
     await page.getByTestId("save-form-notes").fill("Save to be deleted");
     await page
       .getByTestId("save-form-category")

@@ -9,6 +9,7 @@ import {
   createTag,
   createCategoryForType,
   selectTags,
+  e2eCurrentMonthDate,
 } from "../utils/test-helpers";
 
 test.describe("Transactions: CRUD with Settings-created assignments", () => {
@@ -35,6 +36,7 @@ test.describe("Transactions: CRUD with Settings-created assignments", () => {
     page,
   }) => {
     const ts = Date.now();
+    const date = e2eCurrentMonthDate();
     const spendCategoryName = `e2e-spend-cat-${ts}`;
     const bankAccountName = `e2e-ba-${ts}`;
     const tagA = `e2e-tag-a-${ts}`;
@@ -50,7 +52,7 @@ test.describe("Transactions: CRUD with Settings-created assignments", () => {
     await page.goto("/spend");
 
     await page.getByTestId("spend-form-amount").fill("12.34");
-    await page.getByTestId("spend-form-date").fill("2025-12-20");
+    await page.getByTestId("spend-form-date").fill(date);
     await page
       .getByTestId("spend-form-notes")
       .fill("e2e spend with assignments");
@@ -126,6 +128,7 @@ test.describe("Transactions: CRUD with Settings-created assignments", () => {
     page,
   }) => {
     const ts = Date.now();
+    const date = e2eCurrentMonthDate();
     const earnCategoryName = `e2e-earn-cat-${ts}`;
     const bankAccountName = `e2e-ba-earn-${ts}`;
     const tagA = `e2e-tag-earn-a-${ts}`;
@@ -139,7 +142,7 @@ test.describe("Transactions: CRUD with Settings-created assignments", () => {
     await page.goto("/earn");
 
     await page.getByTestId("earn-form-amount").fill("500.00");
-    await page.getByTestId("earn-form-date").fill("2025-12-20");
+    await page.getByTestId("earn-form-date").fill(date);
     await page.getByTestId("earn-form-notes").fill("e2e earn with assignments");
 
     await page
@@ -174,6 +177,7 @@ test.describe("Transactions: CRUD with Settings-created assignments", () => {
     page,
   }) => {
     const ts = Date.now();
+    const date = e2eCurrentMonthDate();
     const saveCategoryName = `e2e-save-cat-${ts}`;
     const bankAccountName = `e2e-ba-save-${ts}`;
     const tagA = `e2e-tag-save-a-${ts}`;
@@ -187,7 +191,7 @@ test.describe("Transactions: CRUD with Settings-created assignments", () => {
     await page.goto("/save");
 
     await page.getByTestId("save-form-amount").fill("200.00");
-    await page.getByTestId("save-form-date").fill("2025-12-20");
+    await page.getByTestId("save-form-date").fill(date);
     await page.getByTestId("save-form-notes").fill("e2e save with assignments");
 
     await page
