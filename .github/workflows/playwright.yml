@@ -1,5 +1,9 @@
 name: E2E Tests on Preview
 
+defaults:
+  run:
+    working-directory: apps/web
+
 on:
   deployment_status:
 
